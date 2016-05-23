@@ -3,8 +3,7 @@ package i5.las2peer.services.fileService;
 import java.io.Serializable;
 
 /**
- * This class is used internally to represent a file stored in the las2peer
- * network including its meta data.
+ * This class is used internally to represent a file stored in the las2peer network including its meta data.
  *
  */
 public class StoredFile implements Serializable {
@@ -13,15 +12,17 @@ public class StoredFile implements Serializable {
 
 	// data types optimized for serialization
 	private String identifier;
+	private String name;
 	private byte[] content;
 	private long lastModified;
-	private long ownerId;
 	private String mimeType;
+	private long ownerId;
 	private String description;
 
-	public StoredFile(String identifier, byte[] content, long lastModified, long ownerId, String mimeType,
+	public StoredFile(String identifier, String name, byte[] content, long lastModified, long ownerId, String mimeType,
 			String description) {
 		this.setIdentifier(identifier);
+		this.setName(name);
 		this.setContent(content);
 		this.setLastModified(lastModified);
 		this.setOwnerId(ownerId);
@@ -35,6 +36,14 @@ public class StoredFile implements Serializable {
 
 	public void setIdentifier(String identifier) {
 		this.identifier = identifier;
+	}
+
+	public String getName() {
+		return name;
+	}
+
+	public void setName(String filename) {
+		this.name = filename;
 	}
 
 	public byte[] getContent() {
