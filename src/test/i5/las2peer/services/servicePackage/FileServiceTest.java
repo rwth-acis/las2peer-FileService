@@ -6,6 +6,7 @@ import static org.junit.Assert.fail;
 
 import java.io.Serializable;
 import java.net.HttpURLConnection;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -95,7 +96,7 @@ public class FileServiceTest {
 		// UserA uploads a file to the network
 		System.out.println("uploading file");
 		mediatorA.invoke(FileService.class.getName(), "storeFile", new Serializable[] { TEST_FILEID, TEST_NAME,
-				TEST_CONTENT.getBytes("UTF-8"), TEST_MIME, TEST_DESCRIPTION }, true);
+				TEST_CONTENT.getBytes(StandardCharsets.UTF_8), TEST_MIME, TEST_DESCRIPTION }, true);
 
 		// UserA downloads the file from the network
 		System.out.println("downloading file");
@@ -109,7 +110,7 @@ public class FileServiceTest {
 		if (!TEST_NAME.equals(file.getName())) {
 			fail("File name doesn't match!");
 		}
-		if (!TEST_CONTENT.equals(new String(file.getContent(), "UTF-8"))) {
+		if (!TEST_CONTENT.equals(new String(file.getContent(), StandardCharsets.UTF_8))) {
 			fail("File content doesn't match!");
 		}
 		if (!TEST_MIME.equals(file.getMimeType())) {
