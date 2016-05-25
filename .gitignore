@@ -10,3 +10,4 @@ ivy.jar
 /out
 /.idea
 *.iml
+/bin
