@@ -1,31 +1,25 @@
 package i5.las2peer.services.fileService;
 
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
 import java.net.HttpURLConnection;
 import java.net.URLEncoder;
-import java.nio.charset.StandardCharsets;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.logging.Level;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
-import javax.ws.rs.DefaultValue;
 import javax.ws.rs.GET;
 import javax.ws.rs.HeaderParam;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
+import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MediaType;
 
-import org.apache.commons.fileupload.MultipartStream;
+import org.apache.commons.fileupload.MultipartStream.MalformedStreamException;
 
 import i5.las2peer.api.Service;
 import i5.las2peer.logging.L2pLogger;
@@ -42,6 +36,8 @@ import i5.las2peer.restMapper.annotations.ContentParam;
 import i5.las2peer.restMapper.annotations.Version;
 import i5.las2peer.security.Agent;
 import i5.las2peer.security.L2pSecurityException;
+import i5.las2peer.services.fileService.multipart.FormDataPart;
+import i5.las2peer.services.fileService.multipart.MultipartHelper;
 import i5.las2peer.tools.SerializationException;
 import i5.las2peer.tools.SimpleTools;
 import io.swagger.annotations.Api;
@@ -75,20 +71,21 @@ import io.swagger.annotations.SwaggerDefinition;
 						url = "https://github.com/rwth-acis/las2peer-File-Service/blob/master/LICENSE")))
 public class FileService extends Service {
 
-	private static final String ENVELOPE_BASENAME = "file-";
-	private static final SimpleDateFormat RFC2822FMT = new SimpleDateFormat("EEE, dd MMM yyyy HH:mm:ss Z (zzz)");
-	private static final int MULTIPARTSTREAM_BUFSIZE = 4096;
-	private static final String HEADER_CONTENT_DISPOSITION = "Content-Disposition";
-	private static final String HEADER_LAST_MODIFIED = "Last-Modified";
-	private static final String HEADER_CONTENT_TYPE = "Content-Type";
-	private static final String HEADER_CONTENT_ENCODING = "Content-Encoding";
-	private static final String HEADER_OWNERID = "ownerid";
-	private static final String HEADER_CONTENT_DESCRIPTION = "Content-Description";
-	private static final Pattern MULTIPART_BOUNDARY_PATTERN = Pattern.compile("multipart/form-data;\\s*boundary=(.*)");
+	// TODO think about rights management
+
+	// this header is not known to javax.ws.rs.core.HttpHeaders
+	public static final String HEADER_CONTENT_DISPOSITION = "Content-Disposition";
+	// non HTTP standard headers
+	public static final String HEADER_OWNERID = "ownerid";
+	public static final String HEADER_CONTENT_DESCRIPTION = "Content-Description";
 
 	// instantiate the logger class
 	private final L2pLogger logger = L2pLogger.getInstance(FileService.class.getName());
 
+	private static final String ENVELOPE_BASENAME = "file-";
+	private static final SimpleDateFormat RFC2822FMT = new SimpleDateFormat("EEE, dd MMM yyyy HH:mm:ss Z (zzz)");
+
+	// configurable properties
 	public static final long DEFAULT_MAX_FILE_SIZE_MB = 5; // MegaByte
 	private long maxFileSizeMB = DEFAULT_MAX_FILE_SIZE_MB;
 
@@ -102,6 +99,31 @@ public class FileService extends Service {
 	// //////////////////////////////////////////////////////////////////////////////////////
 
 	/**
+	 * This method is designed to be used with RMI calls to this service.
+	 * 
+	 * @param fileid
+	 * @return
+	 * @throws ArtifactNotFoundException
+	 * @throws StorageException
+	 * @throws L2pSecurityException
+	 * @throws EnvelopeException
+	 */
+	public Map<String, Object> fetchFile(String fileid)
+			throws ArtifactNotFoundException, StorageException, L2pSecurityException, EnvelopeException {
+		StoredFile file = fetchFileReal(fileid);
+		Map<String, Object> result = new HashMap<>();
+		// fields should be similar to StoredFile class
+		result.put("identifier", file.getIdentifier());
+		result.put("name", file.getName());
+		result.put("content", file.getContent());
+		result.put("lastModified", file.getLastModified());
+		result.put("mimeType", file.getMimeType());
+		result.put("ownerId", file.getOwnerId());
+		result.put("description", file.getDescription());
+		return result;
+	}
+
+	/**
 	 * This method downloads a file from the las2peer network.
 	 * 
 	 * @param fileid
@@ -111,7 +133,7 @@ public class FileService extends Service {
 	 * @throws L2pSecurityException
 	 * @throws EnvelopeException
 	 */
-	public StoredFile fetchFile(String fileid)
+	private StoredFile fetchFileReal(String fileid)
 			throws ArtifactNotFoundException, StorageException, L2pSecurityException, EnvelopeException {
 		Agent owner = getContext().getMainAgent();
 		// fetch envelope by fileid
@@ -153,7 +175,7 @@ public class FileService extends Service {
 		if (content == null) {
 			throw new NullPointerException("content must not be null");
 		}
-		storeFile(new StoredFile(identifier, filename, content, new Date().getTime(),
+		storeFileReal(new StoredFile(identifier, filename, content, new Date().getTime(),
 				getContext().getMainAgent().getId(), mimeType, description));
 	}
 
@@ -170,7 +192,7 @@ public class FileService extends Service {
 	 * @throws L2pSecurityException
 	 * @throws StorageException
 	 */
-	private void storeFile(StoredFile file) throws UnsupportedEncodingException, EncodingFailedException,
+	private void storeFileReal(StoredFile file) throws UnsupportedEncodingException, EncodingFailedException,
 			SerializationException, DecodingFailedException, L2pSecurityException, StorageException {
 		// XXX split file into smaller parts for better network performance
 		// limit (configurable) file size
@@ -196,7 +218,7 @@ public class FileService extends Service {
 		logger.info("stored file (" + file.getIdentifier() + ") in network storage");
 	}
 
-	// TODO delete file
+	// TODO add delete file interface
 
 	/**
 	 * This web API method downloads a file from the las2peer network. The file content is returned as binary content.
@@ -226,13 +248,13 @@ public class FileService extends Service {
 
 	private HttpResponse getFile(String fileid, String responseMode) {
 		try {
-			StoredFile file = fetchFile(fileid);
+			StoredFile file = fetchFileReal(fileid);
 			// set binary file content as response body
 			HttpResponse response = new HttpResponse(file.getContent(), HttpURLConnection.HTTP_OK);
 			// set headers
 			response.setHeader(HEADER_CONTENT_DISPOSITION, responseMode + escapeFilename(file.getName()));
-			response.setHeader(HEADER_LAST_MODIFIED, RFC2822FMT.format(new Date(file.getLastModified())));
-			response.setHeader(HEADER_CONTENT_TYPE, file.getMimeType());
+			response.setHeader(HttpHeaders.LAST_MODIFIED, RFC2822FMT.format(new Date(file.getLastModified())));
+			response.setHeader(HttpHeaders.CONTENT_TYPE, file.getMimeType());
 			// following some non HTTP standard header fields
 			response.setHeader(HEADER_OWNERID, Long.toString(file.getOwnerId()));
 			response.setHeader(HEADER_CONTENT_DESCRIPTION, file.getDescription());
@@ -250,12 +272,13 @@ public class FileService extends Service {
 	private String escapeFilename(String filename) {
 		String result = "";
 		if (filename != null) {
-			result = "; filename=\"" + filename + "\""; // this is the "old" way
+			result = ";filename=\"" + filename + "\""; // this is the "old" way
 			try {
-				result += "; filename*=UTF-8''" + URLEncoder.encode(filename, "UTF-8"); // this is for modern browsers
+				// this is for modern browsers
+				result += ";filename*=UTF-8''" + URLEncoder.encode(filename, "UTF-8").replace("+", "%20");
 			} catch (UnsupportedEncodingException e) {
 				// if this fails, we still have the "old" way
-				logger.log(Level.SEVERE, e.getMessage(), e);
+				logger.log(Level.WARNING, e.getMessage(), e);
 			}
 		}
 		return result;
@@ -272,11 +295,7 @@ public class FileService extends Service {
 	@Produces(MediaType.TEXT_PLAIN)
 	// TODO add @APIResponses
 	public HttpResponse uploadFile(@HeaderParam(
-			value = HEADER_CONTENT_TYPE) String contentType,
-			@HeaderParam(
-					value = HEADER_CONTENT_ENCODING) @DefaultValue(
-							value = "UTF-8") String contentEncoding,
-			@ContentParam String formData) {
+			value = HttpHeaders.CONTENT_TYPE) String contentType, @ContentParam byte[] formData) {
 		// parse given multipart form data
 		String fileid = null;
 		String filename = null;
@@ -284,51 +303,32 @@ public class FileService extends Service {
 		String mimeType = null;
 		String description = null;
 		try {
-			InputStream input = new ByteArrayInputStream(formData.getBytes(contentEncoding));
-			byte[] boundary = getMultipartBoundary(contentType);
-			MultipartStream multipartStream = new MultipartStream(input, boundary, MULTIPARTSTREAM_BUFSIZE, null);
-			boolean hasNextPart = multipartStream.skipPreamble();
-			while (hasNextPart) {
-				String txtHeaders = multipartStream.readHeaders();
-				byte[] multipartContent = readData(multipartStream);
-				System.out.println("==headers==");
-				System.out.println(txtHeaders);
-				System.out.println("==end==");
-				System.out.println("==body==");
-				System.out.println(new String(multipartContent));
-				System.out.println("==end==");
-				// process headers
-				Map<String, Map<String, String>> headerMap = parseHeaders(txtHeaders);
-				Map<String, String> attrMap = headerMap.get(HEADER_CONTENT_DISPOSITION);
-				String dispositionName = attrMap.get("name");
-				if (dispositionName == null || dispositionName.isEmpty()) {
-					throw new IllegalArgumentException("no name provided");
-				}
-				if (dispositionName.equals("filecontent")) {
-					// these data belong to the file input form element
-					filename = attrMap.get("filename");
-					filecontent = multipartContent;
-					Map<String, String> contentTypeHeader = headerMap.get(HEADER_CONTENT_TYPE);
-					if (contentTypeHeader != null) {
-						// nameless attribute is content type
-						String mt = contentTypeHeader.get(null);
-						if (mt != null && !mt.isEmpty()) {
-							mimeType = mt;
-						}
-					}
-				} else if (dispositionName.equals("fileid")) {
-					// these data belong to the (optional) file id text input form element
-					fileid = new String(multipartContent, StandardCharsets.UTF_8);
-				} else if (dispositionName.equals("mimetype") && (mimeType == null || mimeType.isEmpty())) {
-					// optional mime type field, doesn't overwrite filecontents mime type
-					mimeType = new String(multipartContent, StandardCharsets.UTF_8);
-				} else if (dispositionName.equals("description")) {
-					// optional description text input form element
-					description = new String(multipartContent, StandardCharsets.UTF_8);
-				}
-				hasNextPart = multipartStream.readBoundary();
+			Map<String, FormDataPart> parts = MultipartHelper.getParts(formData, contentType);
+			FormDataPart partFilecontent = parts.get("filecontent");
+			if (partFilecontent != null) {
+				// these data belong to the file input form element
+				filename = partFilecontent.getHeader(HEADER_CONTENT_DISPOSITION).getParameter("filename");
+				filecontent = partFilecontent.getContentRaw();
+				mimeType = partFilecontent.getContentType();
+				logger.info("upload request (" + filename + ") of mime type '" + mimeType + "' with content length "
+						+ filecontent.length);
 			}
-		} catch (MultipartStream.MalformedStreamException e) {
+			FormDataPart partFileid = parts.get("fileid");
+			if (partFileid != null) {
+				// these data belong to the (optional) file id text input form element
+				fileid = partFileid.getContent();
+			}
+			FormDataPart partMimetype = parts.get("mimetype");
+			if (partMimetype != null) {
+				// optional mime type field, doesn't overwrite filecontents mime type
+				mimeType = partMimetype.getContent();
+			}
+			FormDataPart partDescription = parts.get("description");
+			if (partDescription != null) {
+				// optional description text input form element
+				description = partDescription.getContent();
+			}
+		} catch (MalformedStreamException e) {
 			// the stream failed to follow required syntax
 			logger.log(Level.SEVERE, e.getMessage(), e);
 			return new HttpResponse("File (" + fileid + ") upload failed! See log for details.",
@@ -361,73 +361,6 @@ public class FileService extends Service {
 			return new HttpResponse("File (" + fileid + ") upload failed! See log for details.",
 					HttpURLConnection.HTTP_INTERNAL_ERROR);
 		}
-	}
-
-	private byte[] getMultipartBoundary(String contentTypeHeader) {
-		final Matcher matcher = MULTIPART_BOUNDARY_PATTERN.matcher(contentTypeHeader);
-		matcher.matches();
-		String first = matcher.group(1);
-		return first.getBytes();
-	}
-
-	private byte[] readData(MultipartStream stream) {
-		// create some output stream
-		ByteArrayOutputStream output = new ByteArrayOutputStream();
-		try {
-			stream.readBodyData(output);
-		} catch (IOException e) {
-			logger.log(Level.SEVERE, e.getMessage(), e);
-			logger.printStackTrace(e);
-		} finally {
-			try {
-				output.close();
-			} catch (IOException e) {
-				// ignore close exception
-			}
-		}
-		return output.toByteArray();
-	}
-
-	// TODO use own exception class
-	private Map<String, Map<String, String>> parseHeaders(String txtHeaders) {
-		// maps header to map of attribute names and values
-		Map<String, Map<String, String>> result = new HashMap<>();
-		// split lines
-		String[] headers = txtHeaders.split("\\r?\\n");
-		// separate header name and value
-		for (String header : headers) {
-			header = header.trim();
-			if (!header.isEmpty()) {
-				int sep = header.indexOf(":");
-				if (sep == -1) {
-					throw new IllegalArgumentException("missing name value separator");
-				}
-				String headerName = header.substring(0, sep).trim();
-				if (result.containsKey(headerName)) {
-					throw new IllegalArgumentException("duplicate header");
-				}
-				Map<String, String> attrMap = new HashMap<>();
-				result.put(headerName, attrMap);
-				String attributes = header.substring(sep).trim();
-				for (String attr : attributes.split(";")) {
-					int eq = attr.indexOf("=");
-					String attrName = null;
-					if (eq != -1) {
-						// some attribute like "text/plain" don't have names
-						attrName = attr.substring(0, eq).trim();
-						if (attrName.isEmpty()) {
-							throw new IllegalArgumentException("header attribute without name");
-						}
-					}
-					String attrValue = attr.substring(eq + 1).trim().replace("\"", "");
-					if (attrMap.containsKey(attrName)) {
-						throw new IllegalArgumentException("duplicate attribute value");
-					}
-					attrMap.put(attrName, attrValue);
-				}
-			}
-		}
-		return result;
 	}
 
 	// TODO provide PUT interface
