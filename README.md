@@ -10,6 +10,17 @@ Furthermore it supports some kind of metadata for each file. Currently it suppor
 - (auto-set) owner id a unique number identifying the users agent that owns this file
 - (optional) a textual description of the files content
 
+Those metadata are set as header fields when the file is fetched from the service. Currently the following headers are set:
+
+- "Content-Disposition: filename=[the filename without path];filename*=[the filename without path]"
+- "Last-Modified: [timestamp in RFC2822 format]"
+- "Content-Type: [as set in files metadata]"
+
+Furthermore the service sets the following non HTTP standard headers:
+
+- "ownerid: [agent id of the owner]"
+- "Content-Description: [textual content description as set in metadata]"
+
 ### How can I integrate the upload function into my web frontend?
 
 Just add or adapt the following form to your web frontend. Please note that **filecontent** is mandatory!
