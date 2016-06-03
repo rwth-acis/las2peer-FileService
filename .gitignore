@@ -12,3 +12,4 @@ ivy.jar
 *.iml
 /bin
 /etc/startup
+/etc/las2peer.policy
