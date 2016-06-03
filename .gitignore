@@ -11,3 +11,4 @@ ivy.jar
 /.idea
 *.iml
 /bin
+/etc/startup
