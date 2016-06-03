@@ -23,11 +23,11 @@ public class MultipartHelper {
 	/**
 	 * This methods reads all multipart data from given form data formatted as String.
 	 * 
-	 * @param formData
-	 * @param contentType
-	 * @return
-	 * @throws MalformedStreamException
-	 * @throws IOException
+	 * @param formData The form data as multipart encoded.
+	 * @param contentType The content type given by the HTTP header.
+	 * @return Returns the mulitpart form elements split up into handy objects for further processing.
+	 * @throws MalformedStreamException If an error occurs with the input stream.
+	 * @throws IOException If an error occurs with the input stream.
 	 */
 	public static Map<String, FormDataPart> getParts(byte[] formData, String contentType)
 			throws MalformedStreamException, IOException {

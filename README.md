@@ -28,7 +28,7 @@ Just add or adapt the following form to your web frontend. Please note that **fi
 <html>
 	<form method="POST" enctype="multipart/form-data" action="http://localhost:14580/fileservice/files">
 		File to upload: <input type="file" name="filecontent" value=""><br/>
-		Identifier (unique): <input type="text" name="fileid"><br/>
+		Identifier (unique): <input type="text" name="identifier"><br/>
 		Description: <input type="text" name="description"><br/>
 		<br/>
 		<input type="submit" value="Press"> to upload the file!
@@ -42,10 +42,10 @@ Each file has its unique identifier and the service provides two urls to get or 
 
 To get the file like a logo image for your website just add:
 ```html
-<img src="http://localhost:14580/fileservice/files/[your logo image fileid]">
+<img src="http://localhost:14580/fileservice/files/[your logo image identifier]">
 ```
 
 To provide a file download link, e.g. for attachments, just add:
 ```html
-<a href="http://localhost:14580/fileservice/download/[your logo image fileid]">Download</a>
+<a href="http://localhost:14580/fileservice/download/[your logo image identifier]">Download</a>
 ```
