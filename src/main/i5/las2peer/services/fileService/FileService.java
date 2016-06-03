@@ -151,8 +151,6 @@ public class FileService extends Service {
 	 * @param identifier
 	 * @param filename
 	 * @param content
-	 * @param lastModified
-	 * @param ownerId
 	 * @param mimeType
 	 * @param description
 	 * @throws UnsupportedEncodingException
