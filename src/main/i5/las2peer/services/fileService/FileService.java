@@ -10,6 +10,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.logging.Level;
 
+import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
 import javax.ws.rs.HeaderParam;
 import javax.ws.rs.POST;
@@ -224,7 +225,18 @@ public class FileService extends Service {
 		return created;
 	}
 
-	// TODO add delete file interface
+	/**
+	 * This operation is not yet supported by las2peer.
+	 * 
+	 * @param identifier A required unqiue name or hash value to identify this file.
+	 * @return Returns an HTTP status code and message with the result of the upload request.
+	 */
+	@DELETE
+	@Path(RESOURCE_BASENAME + "/{identifier}")
+	@Produces(MediaType.TEXT_PLAIN)
+	public HttpResponse deleteFile(@PathParam("identifier") String identifier) {
+		return new HttpResponse("Not implemented, yet!", HttpURLConnection.HTTP_NOT_IMPLEMENTED);
+	}
 
 	/**
 	 * This web API method downloads a file from the las2peer network. The file content is returned as binary content.
