@@ -41,6 +41,8 @@ import i5.las2peer.services.fileService.multipart.MultipartHelper;
 import i5.las2peer.tools.SerializationException;
 import i5.las2peer.tools.SimpleTools;
 import io.swagger.annotations.Api;
+import io.swagger.annotations.ApiResponse;
+import io.swagger.annotations.ApiResponses;
 import io.swagger.annotations.Contact;
 import io.swagger.annotations.Info;
 import io.swagger.annotations.License;
@@ -292,7 +294,13 @@ public class FileService extends Service {
 	@POST
 	@Path("/files")
 	@Produces(MediaType.TEXT_PLAIN)
-	// TODO add @APIResponses
+	@ApiResponses(
+			value = { @ApiResponse(
+					code = HttpURLConnection.HTTP_BAD_REQUEST,
+					message = "File upload failed!"),
+					@ApiResponse(
+							code = HttpURLConnection.HTTP_INTERNAL_ERROR,
+							message = "File upload failed!") })
 	public HttpResponse uploadFile(@HeaderParam(
 			value = HttpHeaders.CONTENT_TYPE) String contentType, @ContentParam byte[] formData) {
 		// parse given multipart form data
