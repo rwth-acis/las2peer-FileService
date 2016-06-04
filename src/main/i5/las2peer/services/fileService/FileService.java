@@ -13,6 +13,7 @@ import java.util.logging.Level;
 import javax.ws.rs.GET;
 import javax.ws.rs.HeaderParam;
 import javax.ws.rs.POST;
+import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
@@ -156,6 +157,7 @@ public class FileService extends Service {
 	 * @param content Actual file content. (required)
 	 * @param mimeType The optional mime type for this file. Also set as header value in the web interface on download.
 	 * @param description An optional description for the file.
+	 * @return Returns true if the file was created and didn't exist before.
 	 * @throws UnsupportedEncodingException If UTF-8 is not known in the JVM environment.
 	 * @throws EncodingFailedException If a serialization or security issue occurs.
 	 * @throws SerializationException If a serialization or security issue occurs.
@@ -163,7 +165,7 @@ public class FileService extends Service {
 	 * @throws L2pSecurityException If a serialization or security issue occurs.
 	 * @throws StorageException If an exception with the shared storage occurs.
 	 */
-	public void storeFile(String identifier, String filename, byte[] content, String mimeType, String description)
+	public boolean storeFile(String identifier, String filename, byte[] content, String mimeType, String description)
 			throws UnsupportedEncodingException, EncodingFailedException, SerializationException,
 			DecodingFailedException, L2pSecurityException, StorageException {
 		// validate input
@@ -176,7 +178,7 @@ public class FileService extends Service {
 		if (content == null) {
 			throw new NullPointerException("content must not be null");
 		}
-		storeFileReal(new StoredFile(identifier, filename, content, new Date().getTime(),
+		return storeFileReal(new StoredFile(identifier, filename, content, new Date().getTime(),
 				getContext().getMainAgent().getId(), mimeType, description));
 	}
 
@@ -184,6 +186,7 @@ public class FileService extends Service {
 	 * This method uploads a file to the las2peer network.
 	 * 
 	 * @param file The file and metadata wrapped into the internal file object class used by this service.
+	 * @return Returns true if the file was created and didn't exist before.
 	 * @throws UnsupportedEncodingException If UTF-8 is not known in the JVM environment.
 	 * @throws EncodingFailedException If a serialization or security issue occurs.
 	 * @throws SerializationException If a serialization or security issue occurs.
@@ -191,8 +194,9 @@ public class FileService extends Service {
 	 * @throws L2pSecurityException If a serialization or security issue occurs.
 	 * @throws StorageException If an exception with the shared storage occurs.
 	 */
-	private void storeFileReal(StoredFile file) throws UnsupportedEncodingException, EncodingFailedException,
+	private boolean storeFileReal(StoredFile file) throws UnsupportedEncodingException, EncodingFailedException,
 			SerializationException, DecodingFailedException, L2pSecurityException, StorageException {
+		boolean created = false;
 		// XXX split file into smaller parts (max. 1MB) for better network performance
 		// limit (configurable) file size
 		if (file.getContent() != null && file.getContent().length > maxFileSizeMB * 1000000) {
@@ -206,6 +210,7 @@ public class FileService extends Service {
 		} catch (Exception e) {
 			logger.info("File (" + file.getIdentifier() + ") not found. Creating new one. " + e.toString());
 			env = Envelope.createClassIdEnvelope(file, ENVELOPE_BASENAME + file.getIdentifier(), owner);
+			created = true;
 		}
 		// update envelope content
 		env.open(owner);
@@ -215,6 +220,7 @@ public class FileService extends Service {
 		env.store();
 		env.close();
 		logger.info("stored file (" + file.getIdentifier() + ") in network storage");
+		return created;
 	}
 
 	// TODO add delete file interface
@@ -301,8 +307,37 @@ public class FileService extends Service {
 					@ApiResponse(
 							code = HttpURLConnection.HTTP_INTERNAL_ERROR,
 							message = "File upload failed!") })
-	public HttpResponse uploadFile(@HeaderParam(
+	public HttpResponse postFile(@HeaderParam(
 			value = HttpHeaders.CONTENT_TYPE) String contentType, @ContentParam byte[] formData) {
+		return uploadFile(contentType, formData, false);
+	}
+
+	/**
+	 * This method uploads a file to the las2peer network.
+	 * 
+	 * @param contentType The (optional) content MIME type for this file. Usually set by the browser.
+	 * @param formData The data from an HTML form encoded as mulitpart.
+	 * @return Returns an HTTP status code and message with the result of the upload request.
+	 */
+	@PUT
+	@Path("/files")
+	@Produces(MediaType.TEXT_PLAIN)
+	@ApiResponses(
+			value = { @ApiResponse(
+					code = HttpURLConnection.HTTP_BAD_REQUEST,
+					message = "File upload failed!"),
+					@ApiResponse(
+							code = HttpURLConnection.HTTP_INTERNAL_ERROR,
+							message = "File upload failed!") })
+	public HttpResponse putFile(@HeaderParam(
+			value = HttpHeaders.CONTENT_TYPE) String contentType, @ContentParam byte[] formData) {
+		// a file identifier is a enforced for put operation
+		return uploadFile(contentType, formData, true);
+	}
+
+	private HttpResponse uploadFile(@HeaderParam(
+			value = HttpHeaders.CONTENT_TYPE) String contentType, @ContentParam byte[] formData,
+			boolean enforceIdentifier) {
 		// parse given multipart form data
 		String identifier = null;
 		String filename = null;
@@ -353,16 +388,23 @@ public class FileService extends Service {
 							+ ") upload failed! No content provided. Add field named filecontent to your form.",
 					HttpURLConnection.HTTP_BAD_REQUEST);
 		}
+		// enforce identifier for PUT operations
+		if (enforceIdentifier && (identifier == null || identifier.isEmpty())) {
+			return new HttpResponse("No identfier provided", HttpURLConnection.HTTP_BAD_REQUEST);
+		}
 		// if the form doesn't especially describe a identifier, use (hashed?) filename as fallback
 		if ((identifier == null || identifier.isEmpty()) && filename != null && !filename.isEmpty()) {
 			logger.info("No file identifier provided using hashed filename as fallback");
 			identifier = Long.toString(SimpleTools.longHash(filename));
 		}
 		try {
-			storeFile(identifier, filename, filecontent, mimeType, description);
-			// just return the file identifier on success, to be used by callee
+			boolean created = storeFile(identifier, filename, filecontent, mimeType, description);
+			int code = HttpURLConnection.HTTP_OK;
+			if (created) {
+				code = HttpURLConnection.HTTP_CREATED;
+			}
 			// TODO a RESTful interface should return the complete URL for this resource
-			return new HttpResponse(identifier, HttpURLConnection.HTTP_OK);
+			return new HttpResponse(identifier, code);
 		} catch (UnsupportedEncodingException | EncodingFailedException | DecodingFailedException
 				| SerializationException | L2pSecurityException | StorageException e) {
 			logger.log(Level.SEVERE, "File upload failed!", e);
@@ -370,8 +412,6 @@ public class FileService extends Service {
 					HttpURLConnection.HTTP_INTERNAL_ERROR);
 		}
 	}
-
-	// TODO provide PUT interface
 
 	// //////////////////////////////////////////////////////////////////////////////////////
 	// Methods required by the las2peer framework.
