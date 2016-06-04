@@ -87,6 +87,7 @@ public class FileService extends Service {
 
 	private static final String ENVELOPE_BASENAME = "file-";
 	private static final SimpleDateFormat RFC2822FMT = new SimpleDateFormat("EEE, dd MMM yyyy HH:mm:ss Z (zzz)");
+	private static final String RESOURCE_BASENAME = "/files";
 
 	// configurable properties
 	public static final long DEFAULT_MAX_FILE_SIZE_MB = 5; // MegaByte
@@ -233,7 +234,7 @@ public class FileService extends Service {
 	 *         occurred.
 	 */
 	@GET
-	@Path("/files/{identifier}")
+	@Path(RESOURCE_BASENAME + "/{identifier}")
 	@Produces(MediaType.APPLICATION_OCTET_STREAM)
 	public HttpResponse getFile(@PathParam("identifier") String identifier) {
 		return getFile(identifier, "inline");
@@ -293,51 +294,73 @@ public class FileService extends Service {
 	/**
 	 * This method uploads a file to the las2peer network.
 	 * 
+	 * @param hostname The hostname this request was send to. Used in REST response URI.
 	 * @param contentType The (optional) content MIME type for this file. Usually set by the browser.
 	 * @param formData The data from an HTML form encoded as mulitpart.
 	 * @return Returns an HTTP status code and message with the result of the upload request.
 	 */
 	@POST
-	@Path("/files")
+	@Path(RESOURCE_BASENAME)
 	@Produces(MediaType.TEXT_PLAIN)
 	@ApiResponses(
 			value = { @ApiResponse(
-					code = HttpURLConnection.HTTP_BAD_REQUEST,
-					message = "File upload failed!"),
+					code = HttpURLConnection.HTTP_OK,
+					message = "File upload successfull"),
+					@ApiResponse(
+							code = HttpURLConnection.HTTP_CREATED,
+							message = "File successfully created"),
+					@ApiResponse(
+							code = HttpURLConnection.HTTP_BAD_REQUEST,
+							message = "File upload failed!"),
 					@ApiResponse(
 							code = HttpURLConnection.HTTP_INTERNAL_ERROR,
 							message = "File upload failed!") })
 	public HttpResponse postFile(@HeaderParam(
-			value = HttpHeaders.CONTENT_TYPE) String contentType, @ContentParam byte[] formData) {
-		return uploadFile(contentType, formData, false);
+			value = HttpHeaders.HOST) String hostname,
+			@HeaderParam(
+					value = HttpHeaders.CONTENT_TYPE) String contentType,
+			@ContentParam byte[] formData) {
+		return uploadFile(hostname, contentType, formData, false);
 	}
 
 	/**
 	 * This method uploads a file to the las2peer network.
 	 * 
+	 * @param hostname The hostname this request was send to. Used in REST response URI.
 	 * @param contentType The (optional) content MIME type for this file. Usually set by the browser.
 	 * @param formData The data from an HTML form encoded as mulitpart.
 	 * @return Returns an HTTP status code and message with the result of the upload request.
 	 */
 	@PUT
-	@Path("/files")
+	@Path(RESOURCE_BASENAME)
 	@Produces(MediaType.TEXT_PLAIN)
 	@ApiResponses(
 			value = { @ApiResponse(
-					code = HttpURLConnection.HTTP_BAD_REQUEST,
-					message = "File upload failed!"),
+					code = HttpURLConnection.HTTP_OK,
+					message = "File upload successfull"),
+					@ApiResponse(
+							code = HttpURLConnection.HTTP_CREATED,
+							message = "File successfully created"),
+					@ApiResponse(
+							code = HttpURLConnection.HTTP_BAD_REQUEST,
+							message = "File upload failed!"),
 					@ApiResponse(
 							code = HttpURLConnection.HTTP_INTERNAL_ERROR,
 							message = "File upload failed!") })
 	public HttpResponse putFile(@HeaderParam(
-			value = HttpHeaders.CONTENT_TYPE) String contentType, @ContentParam byte[] formData) {
+			value = HttpHeaders.HOST) String hostname,
+			@HeaderParam(
+					value = HttpHeaders.CONTENT_TYPE) String contentType,
+			@ContentParam byte[] formData) {
 		// a file identifier is a enforced for put operation
-		return uploadFile(contentType, formData, true);
+		return uploadFile(hostname, contentType, formData, true);
 	}
 
 	private HttpResponse uploadFile(@HeaderParam(
-			value = HttpHeaders.CONTENT_TYPE) String contentType, @ContentParam byte[] formData,
-			boolean enforceIdentifier) {
+			value = HttpHeaders.HOST) String hostname,
+			@HeaderParam(
+					value = HttpHeaders.CONTENT_TYPE) String contentType,
+			@ContentParam byte[] formData, boolean enforceIdentifier) {
 		// parse given multipart form data
 		String identifier = null;
 		String filename = null;
@@ -403,8 +426,12 @@ public class FileService extends Service {
 			if (created) {
 				code = HttpURLConnection.HTTP_CREATED;
 			}
-			// TODO a RESTful interface should return the complete URL for this resource
-			return new HttpResponse(identifier, code);
+			// return the complete URL for this resource
+			String uri = "/fileservice" + RESOURCE_BASENAME + "/" + identifier;
+			if (hostname != null && !hostname.isEmpty()) {
+				uri = hostname + uri;
+			}
+			return new HttpResponse(uri, code);
 		} catch (UnsupportedEncodingException | EncodingFailedException | DecodingFailedException
 				| SerializationException | L2pSecurityException | StorageException e) {
 			logger.log(Level.SEVERE, "File upload failed!", e);
