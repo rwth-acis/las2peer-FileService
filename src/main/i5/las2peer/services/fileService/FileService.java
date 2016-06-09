@@ -75,8 +75,6 @@ import io.swagger.annotations.SwaggerDefinition;
 						url = "https://github.com/rwth-acis/las2peer-File-Service/blob/master/LICENSE")))
 public class FileService extends Service {
 
-	// TODO think about rights management
-
 	// this header is not known to javax.ws.rs.core.HttpHeaders
 	public static final String HEADER_CONTENT_DISPOSITION = "Content-Disposition";
 	// non HTTP standard headers
@@ -199,7 +197,6 @@ public class FileService extends Service {
 	private boolean storeFileReal(StoredFile file) throws UnsupportedEncodingException, EncodingFailedException,
 			SerializationException, DecodingFailedException, L2pSecurityException, StorageException {
 		boolean created = false;
-		// XXX split file into smaller parts (max. 1MB) for better network performance
 		// limit (configurable) file size
 		if (file.getContent() != null && file.getContent().length > maxFileSizeMB * 1000000) {
 			throw new StorageException("File too big! Maximum size: " + maxFileSizeMB + " MB");
