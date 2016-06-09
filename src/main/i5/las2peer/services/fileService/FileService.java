@@ -235,6 +235,49 @@ public class FileService extends Service {
 		return new HttpResponse("Not implemented, yet!", HttpURLConnection.HTTP_NOT_IMPLEMENTED);
 	}
 
+	@GET
+	@Path(RESOURCE_BASENAME + "/{subfolder1}/{subfolder2}/{subfolder3}/{subfolder4}/{subfolder5}/{identifier}")
+	@Produces(MediaType.APPLICATION_OCTET_STREAM)
+	public HttpResponse getFile(@PathParam("subfolder1") String subfolder1, @PathParam("subfolder2") String subfolder2,
+			@PathParam("subfolder3") String subfolder3, @PathParam("subfolder4") String subfolder4,
+			@PathParam("subfolder5") String subfolder5, @PathParam("identifier") String identifier) {
+		return getFile(subfolder1 + "/" + subfolder2 + "/" + subfolder3 + "/" + subfolder4 + "/" + subfolder5 + "/"
+				+ identifier);
+	}
+
+	@GET
+	@Path(RESOURCE_BASENAME + "/{subfolder1}/{subfolder2}/{subfolder3}/{subfolder4}/{identifier}")
+	@Produces(MediaType.APPLICATION_OCTET_STREAM)
+	public HttpResponse getFile(@PathParam("subfolder1") String subfolder1, @PathParam("subfolder2") String subfolder2,
+			@PathParam("subfolder3") String subfolder3, @PathParam("subfolder4") String subfolder4,
+			@PathParam("identifier") String identifier) {
+		return getFile(subfolder1 + "/" + subfolder2 + "/" + subfolder3 + "/" + subfolder4 + "/" + identifier);
+	}
+
+	@GET
+	@Path(RESOURCE_BASENAME + "/{subfolder1}/{subfolder2}/{subfolder3}/{identifier}")
+	@Produces(MediaType.APPLICATION_OCTET_STREAM)
+	public HttpResponse getFile(@PathParam("subfolder1") String subfolder1, @PathParam("subfolder2") String subfolder2,
+			@PathParam("subfolder3") String subfolder3, @PathParam("identifier") String identifier) {
+		return getFile(subfolder1 + "/" + subfolder2 + "/" + subfolder3 + "/" + identifier);
+	}
+
+	@GET
+	@Path(RESOURCE_BASENAME + "/{subfolder1}/{subfolder2}/{identifier}")
+	@Produces(MediaType.APPLICATION_OCTET_STREAM)
+	public HttpResponse getFile(@PathParam("subfolder1") String subfolder1, @PathParam("subfolder2") String subfolder2,
+			@PathParam("identifier") String identifier) {
+		return getFile(subfolder1 + "/" + subfolder2 + "/" + identifier);
+	}
+
+	@GET
+	@Path(RESOURCE_BASENAME + "/{subfolder1}/{identifier}")
+	@Produces(MediaType.APPLICATION_OCTET_STREAM)
+	public HttpResponse getFile(@PathParam("subfolder1") String subfolder1,
+			@PathParam("identifier") String identifier) {
+		return getFile(subfolder1 + "/" + identifier);
+	}
+
 	/**
 	 * This web API method downloads a file from the las2peer network. The file content is returned as binary content.
 	 * 
@@ -246,7 +289,7 @@ public class FileService extends Service {
 	@Path(RESOURCE_BASENAME + "/{identifier}")
 	@Produces(MediaType.APPLICATION_OCTET_STREAM)
 	public HttpResponse getFile(@PathParam("identifier") String identifier) {
-		return getFile(identifier, "inline");
+		return getFile(identifier, false);
 	}
 
 	/**
@@ -259,16 +302,20 @@ public class FileService extends Service {
 	@Path("/download/{identifier}")
 	@Produces(MediaType.APPLICATION_OCTET_STREAM)
 	public HttpResponse downloadFile(@PathParam("identifier") String identifier) {
-		return getFile(identifier, "attachment");
+		return getFile(identifier, true);
 	}
 
-	private HttpResponse getFile(String identifier, String responseMode) {
+	private HttpResponse getFile(String identifier, boolean attachment) {
 		try {
 			StoredFile file = fetchFileReal(identifier);
 			// set binary file content as response body
 			HttpResponse response = new HttpResponse(file.getContent(), HttpURLConnection.HTTP_OK);
 			// set headers
-			response.setHeader(HEADER_CONTENT_DISPOSITION, responseMode + escapeFilename(file.getName()));
+			String disposition = "inline";
+			if (attachment) {
+				disposition = "attachment";
+			}
+			response.setHeader(HEADER_CONTENT_DISPOSITION, disposition + escapeFilename(file.getName()));
 			response.setHeader(HttpHeaders.LAST_MODIFIED, RFC2822FMT.format(new Date(file.getLastModified())));
 			response.setHeader(HttpHeaders.CONTENT_TYPE, file.getMimeType());
 			// following some non HTTP standard header fields
