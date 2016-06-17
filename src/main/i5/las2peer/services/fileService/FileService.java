@@ -485,7 +485,7 @@ public class FileService extends Service {
 			// return the complete URL for this resource
 			String uri = "/fileservice" + RESOURCE_BASENAME + "/" + identifier;
 			if (hostname != null && !hostname.isEmpty()) {
-				uri = hostname + uri;
+				uri = "https://" + hostname + uri;
 			}
 			return new HttpResponse(uri, code);
 		} catch (UnsupportedEncodingException | EncodingFailedException | DecodingFailedException
