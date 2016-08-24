@@ -1,12 +1,11 @@
 package i5.las2peer.services.servicePackage;
 
-import static org.junit.Assert.fail;
-
 import java.io.Serializable;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.junit.Assert;
 import org.junit.Test;
 import org.mpisws.p2p.transport.multiaddress.MultiInetSocketAddress;
 
@@ -98,19 +97,19 @@ public class FileServiceTest {
 
 			// validate fetched file
 			if (!TEST_IDENTIFIER.equals(file.getIdentifier())) {
-				fail("File id doesn't match!");
+				Assert.fail("File id doesn't match!");
 			}
 			if (!TEST_NAME.equals(file.getName())) {
-				fail("File name doesn't match!");
+				Assert.fail("File name doesn't match!");
 			}
 			if (!TEST_CONTENT.equals(new String(file.getContent(), StandardCharsets.UTF_8))) {
-				fail("File content doesn't match!");
+				Assert.fail("File content doesn't match!");
 			}
 			if (!TEST_MIME.equals(file.getMimeType())) {
-				fail("File mime type doesn't match!");
+				Assert.fail("File mime type doesn't match!");
 			}
 			if (!TEST_DESCRIPTION.equals(file.getDescription())) {
-				fail("File description doesn't match!");
+				Assert.fail("File description doesn't match!");
 			}
 
 			stopNetwork();
