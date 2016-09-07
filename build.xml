@@ -290,6 +290,6 @@ agent-user-${las2peer_user3.name}.xml;${las2peer_user3.password}
         <delete dir="node-storage"/>
     </target>
     
-    <target name="all" depends="clean, jar, startscripts, generate_agents, junit, javadoc" />
+    <target name="all" depends="clean, jar, startscripts, generate_agents, junit, javadoc" description="build all targets" />
     
 </project>
