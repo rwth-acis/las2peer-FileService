@@ -23,23 +23,17 @@ import javax.ws.rs.core.MediaType;
 
 import org.apache.commons.fileupload.MultipartStream.MalformedStreamException;
 
-import i5.las2peer.api.Service;
+import i5.las2peer.api.exceptions.ArtifactNotFoundException;
+import i5.las2peer.api.exceptions.StorageException;
 import i5.las2peer.logging.L2pLogger;
-import i5.las2peer.logging.NodeObserver.Event;
-import i5.las2peer.p2p.ArtifactNotFoundException;
-import i5.las2peer.p2p.StorageException;
-import i5.las2peer.persistency.DecodingFailedException;
-import i5.las2peer.persistency.EncodingFailedException;
 import i5.las2peer.persistency.Envelope;
-import i5.las2peer.persistency.EnvelopeException;
 import i5.las2peer.restMapper.HttpResponse;
-import i5.las2peer.restMapper.RESTMapper;
+import i5.las2peer.restMapper.RESTService;
 import i5.las2peer.restMapper.annotations.ContentParam;
-import i5.las2peer.restMapper.annotations.Version;
-import i5.las2peer.security.Agent;
 import i5.las2peer.security.L2pSecurityException;
 import i5.las2peer.services.fileService.multipart.FormDataPart;
 import i5.las2peer.services.fileService.multipart.MultipartHelper;
+import i5.las2peer.tools.CryptoException;
 import i5.las2peer.tools.SerializationException;
 import i5.las2peer.tools.SimpleTools;
 import io.swagger.annotations.Api;
@@ -58,7 +52,6 @@ import io.swagger.annotations.SwaggerDefinition;
  * 
  */
 @Path("/fileservice")
-@Version("1.0") // this annotation is used by the XML mapper
 @Api
 @SwaggerDefinition(
 		info = @Info(
@@ -73,7 +66,7 @@ import io.swagger.annotations.SwaggerDefinition;
 				license = @License(
 						name = "ACIS License",
 						url = "https://github.com/rwth-acis/las2peer-File-Service/blob/master/LICENSE")))
-public class FileService extends Service {
+public class FileService extends RESTService {
 
 	// this header is not known to javax.ws.rs.core.HttpHeaders
 	public static final String HEADER_CONTENT_DISPOSITION = "Content-Disposition";
@@ -109,11 +102,12 @@ public class FileService extends Service {
 	 *         lastModified, mimeType, ownerId and description.
 	 * @throws ArtifactNotFoundException If the file was not found.
 	 * @throws StorageException If an error occurs with the shared storage.
-	 * @throws L2pSecurityException If an encryption error occurs.
-	 * @throws EnvelopeException If the file could not be unwrapped from the shared storage object.
+	 * @throws CryptoException If an encryption error occurs, mostly because of missing read permissions.
+	 * @throws L2pSecurityException If the agent used to get content is not unlocked.
+	 * @throws SerializationException If an serialization issue occurs, mostly because of unexpected or damaged content.
 	 */
-	public Map<String, Object> fetchFile(String identifier)
-			throws ArtifactNotFoundException, StorageException, L2pSecurityException, EnvelopeException {
+	public Map<String, Object> fetchFile(String identifier) throws ArtifactNotFoundException, StorageException,
+			CryptoException, L2pSecurityException, SerializationException {
 		StoredFile file = fetchFileReal(identifier);
 		Map<String, Object> result = new HashMap<>();
 		// fields should be similar to StoredFile class
@@ -127,25 +121,12 @@ public class FileService extends Service {
 		return result;
 	}
 
-	/**
-	 * This method downloads a file from the las2peer network.
-	 * 
-	 * @param identifier A file identifier for the file that should be retrieved. Usually a unique name or hash value.
-	 * @return Returns the file object or {@code null} if an error occurred.
-	 * @throws ArtifactNotFoundException If the file was not found.
-	 * @throws StorageException If an error occurs with the shared storage.
-	 * @throws L2pSecurityException If an encryption error occurs.
-	 * @throws EnvelopeException If the file could not be unwrapped from the shared storage object.
-	 */
-	private StoredFile fetchFileReal(String identifier)
-			throws ArtifactNotFoundException, StorageException, L2pSecurityException, EnvelopeException {
-		Agent owner = getContext().getMainAgent();
+	private StoredFile fetchFileReal(String identifier) throws ArtifactNotFoundException, StorageException,
+			CryptoException, L2pSecurityException, SerializationException {
 		// fetch envelope by file identifier
-		Envelope env = getContext().getStoredObject(StoredFile.class, ENVELOPE_BASENAME + identifier);
-		env.open(owner);
+		Envelope env = getContext().fetchEnvelope(ENVELOPE_BASENAME + identifier);
 		// read content from envelope into string
-		StoredFile result = env.getContent(this.getClass().getClassLoader(), StoredFile.class);
-		env.close();
+		StoredFile result = (StoredFile) env.getContent();
 		return result;
 	}
 
@@ -158,16 +139,13 @@ public class FileService extends Service {
 	 * @param mimeType The optional mime type for this file. Also set as header value in the web interface on download.
 	 * @param description An optional description for the file.
 	 * @return Returns true if the file was created and didn't exist before.
-	 * @throws UnsupportedEncodingException If UTF-8 is not known in the JVM environment.
-	 * @throws EncodingFailedException If a serialization or security issue occurs.
-	 * @throws SerializationException If a serialization or security issue occurs.
-	 * @throws DecodingFailedException If a serialization or security issue occurs.
-	 * @throws L2pSecurityException If a serialization or security issue occurs.
 	 * @throws StorageException If an exception with the shared storage occurs.
+	 * @throws IllegalArgumentException If the content is to large to be stored in an Envelope.
+	 * @throws SerializationException If an serialization issue occurs, mostly because of unexpected or damaged content.
+	 * @throws CryptoException If an encryption error occurs, mostly because of missing read permissions.
 	 */
 	public boolean storeFile(String identifier, String filename, byte[] content, String mimeType, String description)
-			throws UnsupportedEncodingException, EncodingFailedException, SerializationException,
-			DecodingFailedException, L2pSecurityException, StorageException {
+			throws IllegalArgumentException, StorageException, SerializationException, CryptoException {
 		// validate input
 		if (identifier == null) {
 			throw new NullPointerException("file identifier must not be null");
@@ -182,42 +160,26 @@ public class FileService extends Service {
 				getContext().getMainAgent().getId(), mimeType, description));
 	}
 
-	/**
-	 * This method uploads a file to the las2peer network.
-	 * 
-	 * @param file The file and metadata wrapped into the internal file object class used by this service.
-	 * @return Returns true if the file was created and didn't exist before.
-	 * @throws UnsupportedEncodingException If UTF-8 is not known in the JVM environment.
-	 * @throws EncodingFailedException If a serialization or security issue occurs.
-	 * @throws SerializationException If a serialization or security issue occurs.
-	 * @throws DecodingFailedException If a serialization or security issue occurs.
-	 * @throws L2pSecurityException If a serialization or security issue occurs.
-	 * @throws StorageException If an exception with the shared storage occurs.
-	 */
-	private boolean storeFileReal(StoredFile file) throws UnsupportedEncodingException, EncodingFailedException,
-			SerializationException, DecodingFailedException, L2pSecurityException, StorageException {
+	private boolean storeFileReal(StoredFile file)
+			throws StorageException, IllegalArgumentException, SerializationException, CryptoException {
 		boolean created = false;
 		// limit (configurable) file size
 		if (file.getContent() != null && file.getContent().length > maxFileSizeMB * 1000000) {
 			throw new StorageException("File too big! Maximum size: " + maxFileSizeMB + " MB");
 		}
-		Agent owner = getContext().getMainAgent();
 		// fetch or create envelope by file identifier
 		Envelope env = null;
 		try {
-			env = getContext().getStoredObject(StoredFile.class, ENVELOPE_BASENAME + file.getIdentifier());
-		} catch (Exception e) {
+			Envelope stored = getContext().fetchEnvelope(ENVELOPE_BASENAME + file.getIdentifier());
+			// update envelope content
+			env = getContext().createEnvelope(stored, file);
+		} catch (ArtifactNotFoundException e) {
 			logger.info("File (" + file.getIdentifier() + ") not found. Creating new one. " + e.toString());
-			env = Envelope.createClassIdEnvelope(file, ENVELOPE_BASENAME + file.getIdentifier(), owner);
+			env = getContext().createEnvelope(ENVELOPE_BASENAME + file.getIdentifier(), file);
 			created = true;
 		}
-		// update envelope content
-		env.open(owner);
-		env.updateContent(file);
-		env.addSignature(owner);
 		// store envelope
-		env.store();
-		env.close();
+		getContext().storeEnvelope(env);
 		logger.info("stored file (" + file.getIdentifier() + ") in network storage");
 		return created;
 	}
@@ -488,34 +450,11 @@ public class FileService extends Service {
 				uri = "https://" + hostname + uri;
 			}
 			return new HttpResponse(uri, code);
-		} catch (UnsupportedEncodingException | EncodingFailedException | DecodingFailedException
-				| SerializationException | L2pSecurityException | StorageException e) {
+		} catch (StorageException | IllegalArgumentException | SerializationException | CryptoException e) {
 			logger.log(Level.SEVERE, "File upload failed!", e);
 			return new HttpResponse("File (" + identifier + ") upload failed! See log for details.",
 					HttpURLConnection.HTTP_INTERNAL_ERROR);
 		}
-	}
-
-	// //////////////////////////////////////////////////////////////////////////////////////
-	// Methods required by the las2peer framework.
-	// //////////////////////////////////////////////////////////////////////////////////////
-
-	/**
-	 * This method is needed for every RESTful application in las2peer. There is no need to change!
-	 * 
-	 * @return the mapping
-	 */
-	public String getRESTMapping() {
-		String result = "";
-		try {
-			result = RESTMapper.getMethodsAsXML(this.getClass());
-		} catch (Exception e) {
-			// write error to logfile and console
-			logger.log(Level.SEVERE, e.toString(), e);
-			// create and publish a monitoring message
-			L2pLogger.logEvent(this, Event.SERVICE_ERROR, e.toString());
-		}
-		return result;
 	}
 
 }
