@@ -570,7 +570,7 @@ public class FileService extends RESTService {
 			sb.append("<body>\n");
 			sb.append("<h1>Index of " + getAgent().getServiceNameVersion().toString() + "</h1>\n");
 			sb.append("<table>\n");
-			sb.append("<tr>").append("<th>Identifier</th><th>Name</th>").append("<th>Last modified</th>")
+			sb.append("<tr>").append("<th>Identifier</th><th></th><th>Name</th>").append("<th>Last modified</th>")
 					.append("<th>Size</th>").append("<th>Description</th>").append("<th></th>").append("</tr>");
 			sb.append("<tr><th colspan=\"5\"><hr></th></tr>\n");
 			for (StoredFileIndex index : getFileIndexReal()) {
@@ -583,6 +583,8 @@ public class FileService extends RESTService {
 				String basename = cleanSlashes(RESOURCE_BASENAME);
 				String identifier = cleanSlashes(index.getIdentifier());
 				sb.append("<td><a href=\"" + clsURI + basename + identifier + "\">" + identifier + "</a></td>");
+				String download = cleanSlashes(DOWNLOAD_PATH);
+				sb.append("<td><a href=\"" + clsURI + download + identifier + "\">[&#8595;]</a></td>");
 				String strName = index.getName();
 				if (strName == null) {
 					strName = "";
