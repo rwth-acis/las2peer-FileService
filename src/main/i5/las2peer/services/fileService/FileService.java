@@ -86,6 +86,7 @@ public class FileService extends RESTService {
 	private static final String ENVELOPE_BASENAME = "file-";
 	private static final SimpleDateFormat RFC2822FMT = new SimpleDateFormat("EEE, dd MMM yyyy HH:mm:ss Z (zzz)");
 	private static final String RESOURCE_BASENAME = "/files";
+	private static final String DOWNLOAD_PATH = "/download";
 	private static final String INDEX_IDENTIFIER_SUFFIX = "-index";
 	private static final String RESOURCE_INDEX_JSON = "/index.json";
 	private static final String RESOURCE_INDEX_HTML = "/index.html";
@@ -276,6 +277,51 @@ public class FileService extends RESTService {
 		return getFile(identifier, false);
 	}
 
+	@GET
+	@Path(DOWNLOAD_PATH + "/{subfolder1}/{subfolder2}/{subfolder3}/{subfolder4}/{subfolder5}/{identifier}")
+	@Produces(MediaType.APPLICATION_OCTET_STREAM)
+	public HttpResponse downloadFile(@PathParam("subfolder1") String subfolder1,
+			@PathParam("subfolder2") String subfolder2, @PathParam("subfolder3") String subfolder3,
+			@PathParam("subfolder4") String subfolder4, @PathParam("subfolder5") String subfolder5,
+			@PathParam("identifier") String identifier) {
+		return downloadFile(subfolder1 + "/" + subfolder2 + "/" + subfolder3 + "/" + subfolder4 + "/" + subfolder5 + "/"
+				+ identifier);
+	}
+
+	@GET
+	@Path(DOWNLOAD_PATH + "/{subfolder1}/{subfolder2}/{subfolder3}/{subfolder4}/{identifier}")
+	@Produces(MediaType.APPLICATION_OCTET_STREAM)
+	public HttpResponse downloadFile(@PathParam("subfolder1") String subfolder1,
+			@PathParam("subfolder2") String subfolder2, @PathParam("subfolder3") String subfolder3,
+			@PathParam("subfolder4") String subfolder4, @PathParam("identifier") String identifier) {
+		return downloadFile(subfolder1 + "/" + subfolder2 + "/" + subfolder3 + "/" + subfolder4 + "/" + identifier);
+	}
+
+	@GET
+	@Path(DOWNLOAD_PATH + "/{subfolder1}/{subfolder2}/{subfolder3}/{identifier}")
+	@Produces(MediaType.APPLICATION_OCTET_STREAM)
+	public HttpResponse downloadFile(@PathParam("subfolder1") String subfolder1,
+			@PathParam("subfolder2") String subfolder2, @PathParam("subfolder3") String subfolder3,
+			@PathParam("identifier") String identifier) {
+		return downloadFile(subfolder1 + "/" + subfolder2 + "/" + subfolder3 + "/" + identifier);
+	}
+
+	@GET
+	@Path(DOWNLOAD_PATH + "/{subfolder1}/{subfolder2}/{identifier}")
+	@Produces(MediaType.APPLICATION_OCTET_STREAM)
+	public HttpResponse downloadFile(@PathParam("subfolder1") String subfolder1,
+			@PathParam("subfolder2") String subfolder2, @PathParam("identifier") String identifier) {
+		return downloadFile(subfolder1 + "/" + subfolder2 + "/" + identifier);
+	}
+
+	@GET
+	@Path(DOWNLOAD_PATH + "/{subfolder1}/{identifier}")
+	@Produces(MediaType.APPLICATION_OCTET_STREAM)
+	public HttpResponse downloadFile(@PathParam("subfolder1") String subfolder1,
+			@PathParam("identifier") String identifier) {
+		return downloadFile(subfolder1 + "/" + identifier);
+	}
+
 	/**
 	 * This web API method downloads a file from the las2peer network. The file content is returned as binary content.
 	 * 
@@ -283,7 +329,7 @@ public class FileService extends RESTService {
 	 * @return Returns the file content or an error response if an error occurred.
 	 */
 	@GET
-	@Path("/download/{identifier}")
+	@Path(DOWNLOAD_PATH + "/{identifier}")
 	@Produces(MediaType.APPLICATION_OCTET_STREAM)
 	public HttpResponse downloadFile(@PathParam("identifier") String identifier) {
 		return getFile(identifier, true);
