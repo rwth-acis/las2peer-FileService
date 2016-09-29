@@ -14,7 +14,7 @@ curlcmd bootstrap.min.css
 curlcmd index.html
 curlcmd logo.png
 curlcmd JS/common.js
-curlcmd JS/jquery-2.2.0.min.js
+curlcmd JS/jquery-2.2.4.min.js
 curlcmd JS/jws-2.0.min.js
 curlcmd JS/oidc-button.js
 curlcmd JS/jsrsasign/asn1-1.0.min.js
