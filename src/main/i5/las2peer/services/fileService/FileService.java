@@ -513,16 +513,11 @@ public class FileService extends RESTService {
 			sb.append("<body>\n");
 			sb.append("<h1>Index of " + getAgent().getServiceNameVersion().toString() + "</h1>\n");
 			sb.append("<table>\n");
-			sb.append("<tr>").append("<th>Name</th>").append("<th>Last modified</th>").append("<th>Size</th>")
-					.append("<th>Description</th>").append("<th></th>").append("</tr>");
+			sb.append("<tr>").append("<th>Identifier</th><th>Name</th>").append("<th>Last modified</th>")
+					.append("<th>Size</th>").append("<th>Description</th>").append("<th></th>").append("</tr>");
 			sb.append("<tr><th colspan=\"5\"><hr></th></tr>\n");
 			for (StoredFileIndex index : getFileIndexReal()) {
 				sb.append("<tr>");
-				String strName = index.getName();
-				if (strName == null) {
-					// use identifier as fallback name
-					strName = index.getIdentifier();
-				}
 				String clsURI = "";
 				Path pathAnnotation = getClass().getAnnotation(Path.class);
 				if (pathAnnotation != null) {
@@ -530,7 +525,12 @@ public class FileService extends RESTService {
 				}
 				String basename = cleanSlashes(RESOURCE_BASENAME);
 				String identifier = cleanSlashes(index.getIdentifier());
-				sb.append("<td><a href=\"" + clsURI + basename + identifier + "\">" + strName + "</a></td>");
+				sb.append("<td><a href=\"" + clsURI + basename + identifier + "\">" + identifier + "</a></td>");
+				String strName = index.getName();
+				if (strName == null) {
+					strName = "";
+				}
+				sb.append("<td>" + strName + "</td>");
 				sb.append("<td>" + HTML_DATE_FMT.format(new Date(index.getLastModified())) + "</td>");
 				sb.append("<td align=\"right\">" + humanReadableByteCount(index.getFileSize(), true) + "</td>");
 				String description = index.getDescription();
