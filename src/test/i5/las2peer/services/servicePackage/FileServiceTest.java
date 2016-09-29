@@ -127,6 +127,19 @@ public class FileServiceTest {
 			Assert.assertEquals(TEST_MIME, map.get("mimeType"));
 			Assert.assertEquals(userA.getId(), map.get("ownerId"));
 			Assert.assertEquals(TEST_DESCRIPTION, map.get("description"));
+
+			// upload file again
+			System.out.println("uploading file");
+			mediatorA.invoke(FileService.class.getName(), "storeFile",
+					new Serializable[] { TEST_IDENTIFIER, TEST_NAME, TEST_CONTENT, TEST_MIME, TEST_DESCRIPTION },
+					false);
+
+			// verify: no duplicate index entry
+			System.out.println("fetching file index");
+			@SuppressWarnings("unchecked")
+			ArrayList<Map<String, Object>> result2 = (ArrayList<Map<String, Object>>) mediatorA
+					.invoke(FileService.class.getName(), "getFileIndex", new Serializable[] {}, false);
+			Assert.assertTrue(result2.size() == 1);
 		} catch (Exception e) {
 			e.printStackTrace();
 			Assert.fail(e.toString());

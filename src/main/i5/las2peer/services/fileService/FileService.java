@@ -180,7 +180,12 @@ public class FileService extends RESTService {
 			Envelope storedIndex = getContext().fetchEnvelope(getIndexIdentifier());
 			@SuppressWarnings("unchecked")
 			ArrayList<StoredFileIndex> fileIndex = (ArrayList<StoredFileIndex>) storedIndex.getContent();
-			fileIndex.add(indexEntry);
+			int pos = fileIndex.indexOf(indexEntry);
+			if (pos < 0) {
+				fileIndex.add(indexEntry);
+			} else {
+				fileIndex.set(pos, indexEntry);
+			}
 			// update file index
 			indexEnv = getContext().createUnencryptedEnvelope(storedIndex, fileIndex);
 		} catch (ArtifactNotFoundException e) {
