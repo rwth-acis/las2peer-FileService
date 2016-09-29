@@ -7,6 +7,10 @@ function curlcmd {
   echo "" # just for the newline character
 }
 
+if [ $# -eq 1 ]; then # upload single file given as only parameter
+curlcmd $1
+else # upload complete frontend
+curlcmd bootstrap.min.css
 curlcmd index.html
 curlcmd logo.png
 curlcmd JS/common.js
@@ -26,4 +30,5 @@ curlcmd JS/jsrsasign/ext/jsbn2-min.js
 curlcmd JS/jsrsasign/ext/jsbn-min.js
 curlcmd JS/jsrsasign/ext/rsa2-min.js
 curlcmd JS/jsrsasign/ext/rsa-min.js
+fi
 
