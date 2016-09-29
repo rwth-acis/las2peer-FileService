@@ -4,6 +4,8 @@ import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.HttpURLConnection;
 import java.net.URLEncoder;
+import java.nio.file.InvalidPathException;
+import java.nio.file.Paths;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
@@ -411,7 +413,16 @@ public class FileService extends RESTService {
 				FormDataPart partFilecontent = parts.get("filecontent");
 				if (partFilecontent != null) {
 					// these data belong to the file input form element
-					filename = partFilecontent.getHeader(HEADER_CONTENT_DISPOSITION).getParameter("filename");
+					String fullFilename = partFilecontent.getHeader(HEADER_CONTENT_DISPOSITION)
+							.getParameter("filename");
+					try {
+						filename = Paths.get(fullFilename).getFileName().toString();
+					} catch (InvalidPathException e) {
+						logger.log(Level.FINER,
+								"Could not extract filename from '" + fullFilename + "', " + e.toString());
+						// use full filename as fallback
+						filename = fullFilename;
+					}
 					filecontent = partFilecontent.getContentRaw();
 					mimeType = partFilecontent.getContentType();
 					logger.info("upload request (" + filename + ") of mime type '" + mimeType + "' with content length "
