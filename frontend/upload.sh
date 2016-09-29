@@ -13,6 +13,7 @@ else # upload complete frontend
 curlcmd bootstrap.min.css
 curlcmd index.html
 curlcmd logo.png
+curlcmd JS/bootstrap.min.js
 curlcmd JS/common.js
 curlcmd JS/jquery-2.2.4.min.js
 curlcmd JS/jws-2.0.min.js
