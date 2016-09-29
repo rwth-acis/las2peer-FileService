@@ -111,18 +111,4 @@ public class StoredFileIndex implements Serializable {
 		return result;
 	}
 
-	@Override
-	public boolean equals(Object obj) {
-		if (super.equals(obj)) {
-			return true;
-		} else if (obj == null) {
-			return false;
-		} else if (obj instanceof StoredFileIndex) {
-			StoredFileIndex index = (StoredFileIndex) obj;
-			return this.getIdentifier().equalsIgnoreCase(index.getIdentifier());
-		} else {
-			return false;
-		}
-	}
-
 }

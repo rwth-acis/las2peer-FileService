@@ -7,6 +7,7 @@ import java.net.URLEncoder;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.Iterator;
 import java.util.Map;
 import java.util.logging.Level;
 
@@ -180,13 +181,16 @@ public class FileService extends RESTService {
 			Envelope storedIndex = getContext().fetchEnvelope(getIndexIdentifier());
 			@SuppressWarnings("unchecked")
 			ArrayList<StoredFileIndex> fileIndex = (ArrayList<StoredFileIndex>) storedIndex.getContent();
-			int pos = fileIndex.indexOf(indexEntry);
-			if (pos < 0) {
-				fileIndex.add(indexEntry);
-			} else {
-				fileIndex.set(pos, indexEntry);
+			// remove old entries
+			Iterator<StoredFileIndex> itIndex = fileIndex.iterator();
+			while (itIndex.hasNext()) {
+				StoredFileIndex index = itIndex.next();
+				if (indexEntry.getIdentifier().equalsIgnoreCase(index.getIdentifier())) {
+					itIndex.remove();
+				}
 			}
 			// update file index
+			fileIndex.add(indexEntry);
 			indexEnv = getContext().createUnencryptedEnvelope(storedIndex, fileIndex);
 		} catch (ArtifactNotFoundException e) {
 			logger.info("Index not found. Creating new one.");
