@@ -1,6 +1,7 @@
 package i5.las2peer.services.fileService;
 
 import java.io.Serializable;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -109,6 +110,25 @@ public class StoredFileIndex implements Serializable {
 		JSONObject result = new JSONObject();
 		result.putAll(toMap());
 		return result;
+	}
+
+	public static class StoredFileIndexComparator implements Comparator<StoredFileIndex> {
+
+		public static final StoredFileIndexComparator INSTANCE = new StoredFileIndexComparator();
+
+		@Override
+		public int compare(StoredFileIndex o1, StoredFileIndex o2) {
+			if (o1 == o2) {
+				return 0;
+			} else if (o1 == null && o2 != null) {
+				return -1;
+			} else if (o1 != null && o2 == null) {
+				return 1;
+			} else {
+				return o1.getIdentifier().compareTo(o2.getIdentifier());
+			}
+		}
+
 	}
 
 }

@@ -36,6 +36,7 @@ import i5.las2peer.restMapper.HttpResponse;
 import i5.las2peer.restMapper.RESTService;
 import i5.las2peer.restMapper.annotations.ContentParam;
 import i5.las2peer.security.L2pSecurityException;
+import i5.las2peer.services.fileService.StoredFileIndex.StoredFileIndexComparator;
 import i5.las2peer.services.fileService.multipart.FormDataPart;
 import i5.las2peer.services.fileService.multipart.MultipartHelper;
 import i5.las2peer.tools.CryptoException;
@@ -658,6 +659,7 @@ public class FileService extends RESTService {
 			Envelope storedIndex = getContext().fetchEnvelope(getIndexIdentifier());
 			@SuppressWarnings("unchecked")
 			ArrayList<StoredFileIndex> indexList = (ArrayList<StoredFileIndex>) storedIndex.getContent();
+			indexList.sort(StoredFileIndexComparator.INSTANCE);
 			return indexList;
 		} catch (ArtifactNotFoundException e) {
 			return new ArrayList<>();
