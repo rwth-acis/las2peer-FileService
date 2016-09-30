@@ -573,7 +573,7 @@ public class FileService extends RESTService {
 			sb.append("<table>\n");
 			sb.append("<tr>").append("<th>Identifier</th><th></th><th>Name</th>").append("<th>Last modified</th>")
 					.append("<th>Size</th>").append("<th>Description</th>").append("<th></th>").append("</tr>");
-			sb.append("<tr><th colspan=\"5\"><hr></th></tr>\n");
+			sb.append("<tr><th colspan=\"7\"><hr></th></tr>\n");
 			for (StoredFileIndex index : getFileIndexReal()) {
 				sb.append("<tr>");
 				String clsURI = "";
