@@ -35,6 +35,8 @@ import i5.las2peer.persistency.Envelope;
 import i5.las2peer.restMapper.HttpResponse;
 import i5.las2peer.restMapper.RESTService;
 import i5.las2peer.restMapper.annotations.ContentParam;
+import i5.las2peer.security.Agent;
+import i5.las2peer.security.GroupAgent;
 import i5.las2peer.security.L2pSecurityException;
 import i5.las2peer.services.fileService.StoredFileIndex.StoredFileIndexComparator;
 import i5.las2peer.services.fileService.multipart.FormDataPart;
@@ -140,6 +142,8 @@ public class FileService extends RESTService {
 	 * @param filename An optional human readable filename.
 	 * @param content Actual file content. (required)
 	 * @param mimeType The optional mime type for this file. Also set as header value in the web interface on download.
+	 * @param shareWithGroup An optional group id to share the file with. Gives write permission to this group.
+	 *            Therefore the active agent must be member of this group.
 	 * @param description An optional description for the file.
 	 * @return Returns true if the file was created and didn't exist before.
 	 * @throws StorageException If an exception with the shared storage occurs.
@@ -149,14 +153,24 @@ public class FileService extends RESTService {
 	 * @throws AgentNotKnownException If the service is not yet started.
 	 * @throws L2pSecurityException If the main agent isn't unlocked.
 	 */
-	public boolean storeFile(String identifier, String filename, byte[] content, String mimeType, String description)
-			throws IllegalArgumentException, StorageException, SerializationException, CryptoException,
-			AgentNotKnownException, L2pSecurityException {
-		return storeFileReal(new StoredFile(identifier, filename, content, new Date().getTime(),
-				getContext().getMainAgent().getId(), mimeType, description));
+	public boolean storeFile(String identifier, String filename, byte[] content, String mimeType, String shareWithGroup,
+			String description) throws IllegalArgumentException, StorageException, SerializationException,
+			CryptoException, AgentNotKnownException, L2pSecurityException {
+		Agent owner = getContext().getMainAgent();
+		if (shareWithGroup != null) {
+			Agent shareGroup = getContext().getAgent(Long.valueOf(shareWithGroup));
+			if (!(shareGroup instanceof GroupAgent)) {
+				throw new IllegalArgumentException("Can not share file with non group agent '" + shareWithGroup + "' ("
+						+ shareGroup.getClass().getCanonicalName() + ")");
+			}
+			((GroupAgent) shareGroup).unlockPrivateKey(getContext().getMainAgent());
+			owner = shareGroup;
+		}
+		return storeFileReal(owner, new StoredFile(identifier, filename, content, new Date().getTime(), owner.getId(),
+				mimeType, description));
 	}
 
-	private boolean storeFileReal(StoredFile file) throws StorageException, IllegalArgumentException,
+	private boolean storeFileReal(Agent owner, StoredFile file) throws StorageException, IllegalArgumentException,
 			SerializationException, CryptoException, AgentNotKnownException, L2pSecurityException {
 		boolean created = false;
 		// limit (configurable) file size
@@ -168,14 +182,14 @@ public class FileService extends RESTService {
 		try {
 			Envelope storedFile = getContext().fetchEnvelope(ENVELOPE_BASENAME + file.getIdentifier());
 			// update envelope content
-			fileEnv = getContext().createEnvelope(storedFile, file);
+			fileEnv = getContext().createEnvelope(storedFile, file, owner);
 		} catch (ArtifactNotFoundException e) {
 			logger.info("File (" + file.getIdentifier() + ") not found. Creating new one. " + e.toString());
-			fileEnv = getContext().createEnvelope(ENVELOPE_BASENAME + file.getIdentifier(), file);
+			fileEnv = getContext().createEnvelope(ENVELOPE_BASENAME + file.getIdentifier(), file, owner);
 			created = true;
 		}
-		// store file envelope
-		getContext().storeEnvelope(fileEnv);
+		// store envelope with file content
+		getContext().storeEnvelope(fileEnv, owner);
 		logger.info("stored file (" + file.getIdentifier() + ") in network storage");
 		// fetch or create file index envelope
 		StoredFileIndex indexEntry = new StoredFileIndex(file.getIdentifier(), file.getName(), file.getLastModified(),
@@ -454,6 +468,7 @@ public class FileService extends RESTService {
 			String filename = null;
 			byte[] filecontent = null;
 			String mimeType = null;
+			String shareWithGroup = null;
 			String description = null;
 			try {
 				Map<String, FormDataPart> parts = MultipartHelper.getParts(formData, contentType);
@@ -484,6 +499,11 @@ public class FileService extends RESTService {
 				if (partMimetype != null) {
 					// optional mime type field, doesn't overwrite filecontents mime type
 					mimeType = partMimetype.getContent();
+				}
+				FormDataPart partShareWithGroup = parts.get("sharewithgroup");
+				if (partShareWithGroup != null) {
+					// optional share with group
+					shareWithGroup = partShareWithGroup.getContent();
 				}
 				FormDataPart partDescription = parts.get("description");
 				if (partDescription != null) {
@@ -517,7 +537,7 @@ public class FileService extends RESTService {
 				logger.info("No file identifier provided using hashed filename as fallback");
 				identifier = Long.toString(SimpleTools.longHash(filename));
 			}
-			boolean created = storeFile(identifier, filename, filecontent, mimeType, description);
+			boolean created = storeFile(identifier, filename, filecontent, mimeType, shareWithGroup, description);
 			int code = HttpURLConnection.HTTP_OK;
 			if (created) {
 				code = HttpURLConnection.HTTP_CREATED;
