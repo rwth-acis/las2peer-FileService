@@ -142,6 +142,29 @@ public class FileService extends RESTService {
 	 * @param filename An optional human readable filename.
 	 * @param content Actual file content. (required)
 	 * @param mimeType The optional mime type for this file. Also set as header value in the web interface on download.
+	 * @param description An optional description for the file.
+	 * @return Returns true if the file was created and didn't exist before.
+	 * @throws StorageException If an exception with the shared storage occurs.
+	 * @throws IllegalArgumentException If the content is to large to be stored in an Envelope.
+	 * @throws SerializationException If an serialization issue occurs, mostly because of unexpected or damaged content.
+	 * @throws CryptoException If an encryption error occurs, mostly because of missing read permissions.
+	 * @throws AgentNotKnownException If the service is not yet started.
+	 * @throws L2pSecurityException If the main agent isn't unlocked.
+	 */
+	public boolean storeFile(String identifier, String filename, byte[] content, String mimeType, String description)
+			throws IllegalArgumentException, StorageException, SerializationException, CryptoException,
+			AgentNotKnownException, L2pSecurityException {
+		return storeFile(identifier, filename, content, mimeType, null, description);
+	}
+
+	/**
+	 * This method is intended to be used by other services for invocation. It uses only default types and classes.
+	 * Files are added to the file index listing.
+	 * 
+	 * @param identifier A required unique name or hash value to identify this file.
+	 * @param filename An optional human readable filename.
+	 * @param content Actual file content. (required)
+	 * @param mimeType The optional mime type for this file. Also set as header value in the web interface on download.
 	 * @param shareWithGroup An optional group id to share the file with. Gives write permission to this group.
 	 *            Therefore the active agent must be member of this group.
 	 * @param description An optional description for the file.
@@ -156,6 +179,31 @@ public class FileService extends RESTService {
 	public boolean storeFile(String identifier, String filename, byte[] content, String mimeType, String shareWithGroup,
 			String description) throws IllegalArgumentException, StorageException, SerializationException,
 			CryptoException, AgentNotKnownException, L2pSecurityException {
+		return storeFile(identifier, filename, content, mimeType, shareWithGroup, description, true);
+	}
+
+	/**
+	 * This method is intended to be used by other services for invocation. It uses only default types and classes.
+	 * 
+	 * @param identifier A required unique name or hash value to identify this file.
+	 * @param filename An optional human readable filename.
+	 * @param content Actual file content. (required)
+	 * @param mimeType The optional mime type for this file. Also set as header value in the web interface on download.
+	 * @param shareWithGroup An optional group id to share the file with. Gives write permission to this group.
+	 *            Therefore the active agent must be member of this group.
+	 * @param description An optional description for the file.
+	 * @param listFileOnIndex If true (default) the file is listed in the publicly viewable file index listing.
+	 * @return Returns true if the file was created and didn't exist before.
+	 * @throws StorageException If an exception with the shared storage occurs.
+	 * @throws IllegalArgumentException If the content is to large to be stored in an Envelope.
+	 * @throws SerializationException If an serialization issue occurs, mostly because of unexpected or damaged content.
+	 * @throws CryptoException If an encryption error occurs, mostly because of missing read permissions.
+	 * @throws AgentNotKnownException If the service is not yet started.
+	 * @throws L2pSecurityException If the main agent isn't unlocked.
+	 */
+	public boolean storeFile(String identifier, String filename, byte[] content, String mimeType, String shareWithGroup,
+			String description, boolean listFileOnIndex) throws IllegalArgumentException, StorageException,
+			SerializationException, CryptoException, AgentNotKnownException, L2pSecurityException {
 		Agent owner = getContext().getMainAgent();
 		if (shareWithGroup != null) {
 			Agent shareGroup = getContext().getAgent(Long.valueOf(shareWithGroup));
@@ -167,11 +215,12 @@ public class FileService extends RESTService {
 			owner = shareGroup;
 		}
 		return storeFileReal(owner, new StoredFile(identifier, filename, content, new Date().getTime(), owner.getId(),
-				mimeType, description));
+				mimeType, description), listFileOnIndex);
 	}
 
-	private boolean storeFileReal(Agent owner, StoredFile file) throws StorageException, IllegalArgumentException,
-			SerializationException, CryptoException, AgentNotKnownException, L2pSecurityException {
+	private boolean storeFileReal(Agent owner, StoredFile file, boolean listFileOnIndex)
+			throws StorageException, IllegalArgumentException, SerializationException, CryptoException,
+			AgentNotKnownException, L2pSecurityException {
 		boolean created = false;
 		// limit (configurable) file size
 		if (file.getContent() != null && file.getContent().length > maxFileSizeMB * 1000000) {
@@ -190,34 +239,36 @@ public class FileService extends RESTService {
 		}
 		// store envelope with file content
 		getContext().storeEnvelope(fileEnv, owner);
-		logger.info("stored file (" + file.getIdentifier() + ") in network storage");
-		// fetch or create file index envelope
-		StoredFileIndex indexEntry = new StoredFileIndex(file.getIdentifier(), file.getName(), file.getLastModified(),
-				file.getOwnerId(), file.getMimeType(), file.getDescription(), file.getFileSize());
-		Envelope indexEnv = null;
-		try {
-			Envelope storedIndex = getContext().fetchEnvelope(getIndexIdentifier());
-			@SuppressWarnings("unchecked")
-			ArrayList<StoredFileIndex> fileIndex = (ArrayList<StoredFileIndex>) storedIndex.getContent();
-			// remove old entries
-			Iterator<StoredFileIndex> itIndex = fileIndex.iterator();
-			while (itIndex.hasNext()) {
-				StoredFileIndex index = itIndex.next();
-				if (indexEntry.getIdentifier().equalsIgnoreCase(index.getIdentifier())) {
-					itIndex.remove();
+		if (listFileOnIndex) {
+			// fetch or create file index envelope
+			StoredFileIndex indexEntry = new StoredFileIndex(file.getIdentifier(), file.getName(),
+					file.getLastModified(), file.getOwnerId(), file.getMimeType(), file.getDescription(),
+					file.getFileSize());
+			Envelope indexEnv = null;
+			try {
+				Envelope storedIndex = getContext().fetchEnvelope(getIndexIdentifier());
+				@SuppressWarnings("unchecked")
+				ArrayList<StoredFileIndex> fileIndex = (ArrayList<StoredFileIndex>) storedIndex.getContent();
+				// remove old entries
+				Iterator<StoredFileIndex> itIndex = fileIndex.iterator();
+				while (itIndex.hasNext()) {
+					StoredFileIndex index = itIndex.next();
+					if (indexEntry.getIdentifier().equalsIgnoreCase(index.getIdentifier())) {
+						itIndex.remove();
+					}
 				}
+				// update file index
+				fileIndex.add(indexEntry);
+				indexEnv = getContext().createUnencryptedEnvelope(storedIndex, fileIndex);
+			} catch (ArtifactNotFoundException e) {
+				logger.info("Index not found. Creating new one.");
+				ArrayList<StoredFileIndex> fileIndex = new ArrayList<>();
+				fileIndex.add(indexEntry);
+				indexEnv = getContext().createUnencryptedEnvelope(getIndexIdentifier(), fileIndex);
 			}
-			// update file index
-			fileIndex.add(indexEntry);
-			indexEnv = getContext().createUnencryptedEnvelope(storedIndex, fileIndex);
-		} catch (ArtifactNotFoundException e) {
-			logger.info("Index not found. Creating new one.");
-			ArrayList<StoredFileIndex> fileIndex = new ArrayList<>();
-			fileIndex.add(indexEntry);
-			indexEnv = getContext().createUnencryptedEnvelope(getIndexIdentifier(), fileIndex);
+			// store index envelope
+			getContext().storeEnvelope(indexEnv);
 		}
-		// store index envelope
-		getContext().storeEnvelope(indexEnv);
 		logger.info("stored file (" + file.getIdentifier() + ") in network storage");
 		return created;
 	}
