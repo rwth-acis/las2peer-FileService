@@ -31,7 +31,7 @@ public class MultipartHelper {
 	 */
 	public static Map<String, FormDataPart> getParts(byte[] formData, String contentType)
 			throws MalformedStreamException, IOException {
-		Map<String, FormDataPart> result = new HashMap<String, FormDataPart>();
+		Map<String, FormDataPart> result = new HashMap<>();
 		InputStream input = new ByteArrayInputStream(formData);
 		byte[] boundary = MultipartHelper.getBoundary(contentType);
 		MultipartStream multipartStream = new MultipartStream(input, boundary, MULTIPARTSTREAM_BUFSIZE, null);
@@ -79,7 +79,7 @@ public class MultipartHelper {
 
 	private static Map<String, FormDataHeader> parseHeaders(String txtHeaders) throws MalformedFormDataException {
 		// maps header to map of attribute names and values
-		final Map<String, FormDataHeader> result = new HashMap<String, FormDataHeader>();
+		final Map<String, FormDataHeader> result = new HashMap<>();
 		// split lines
 		final String[] headers = txtHeaders.split("\\r?\\n");
 		// separate header name and value
