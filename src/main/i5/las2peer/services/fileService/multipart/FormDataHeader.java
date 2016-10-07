@@ -41,13 +41,13 @@ public class FormDataHeader {
 	}
 
 	/**
-	 * Gets the first parameter for this header.
+	 * Gets the first parameter key for this header.
 	 * 
 	 * @return Returns the first parameter.
 	 */
-	public String getFirstParameter() {
+	public String getFirstParameterKey() {
 		if (countParameter() > 0) {
-			return parameters.values().iterator().next();
+			return parameters.keySet().iterator().next();
 		}
 		return null;
 	}

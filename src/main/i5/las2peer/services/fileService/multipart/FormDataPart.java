@@ -58,7 +58,7 @@ public class FormDataPart {
 			if (contentTypeHeader.countParameter() > 1) {
 				throw new MalformedFormDataException("Only one parameter expected");
 			}
-			String mt = contentTypeHeader.getFirstParameter();
+			String mt = contentTypeHeader.getFirstParameterKey();
 			if (mt != null && !mt.isEmpty()) {
 				return mt;
 			}
