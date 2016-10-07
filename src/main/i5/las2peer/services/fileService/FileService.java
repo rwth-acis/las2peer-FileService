@@ -23,18 +23,21 @@ import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
+import javax.ws.rs.core.Response.ResponseBuilder;
+import javax.ws.rs.core.Response.Status;
 
 import org.apache.commons.fileupload.MultipartStream.MalformedStreamException;
 import org.apache.commons.lang3.StringEscapeUtils;
 
+import i5.las2peer.api.Context;
 import i5.las2peer.api.exceptions.ArtifactNotFoundException;
 import i5.las2peer.api.exceptions.StorageException;
 import i5.las2peer.logging.L2pLogger;
 import i5.las2peer.p2p.AgentNotKnownException;
 import i5.las2peer.persistency.Envelope;
-import i5.las2peer.restMapper.HttpResponse;
 import i5.las2peer.restMapper.RESTService;
-import i5.las2peer.restMapper.annotations.ContentParam;
+import i5.las2peer.restMapper.annotations.ServicePath;
 import i5.las2peer.security.Agent;
 import i5.las2peer.security.GroupAgent;
 import i5.las2peer.security.L2pSecurityException;
@@ -60,7 +63,7 @@ import net.minidev.json.JSONArray;
  * service also via the WebConnector.
  * 
  */
-@Path("/fileservice")
+@ServicePath("/fileservice")
 @Api
 @SwaggerDefinition(
 		info = @Info(
@@ -88,8 +91,8 @@ public class FileService extends RESTService {
 
 	private static final String ENVELOPE_BASENAME = "file-";
 	private static final SimpleDateFormat RFC2822FMT = new SimpleDateFormat("EEE, dd MMM yyyy HH:mm:ss Z (zzz)");
-	private static final String RESOURCE_BASENAME = "/files";
-	private static final String DOWNLOAD_PATH = "/download";
+	private static final String RESOURCE_FILES_BASENAME = "/files";
+	private static final String RESOURCE_DOWNLOAD_BASENAME = "/download";
 	private static final String INDEX_IDENTIFIER_SUFFIX = "-index";
 	private static final String RESOURCE_INDEX_JSON = "/index.json";
 	private static final String RESOURCE_INDEX_HTML = "/index.html";
@@ -102,6 +105,13 @@ public class FileService extends RESTService {
 	public FileService() {
 		// read and set properties values
 		setFieldValues();
+	}
+
+	@Override
+	protected void initResources() {
+		getResourceConfig().register(ResourceFiles.class);
+		getResourceConfig().register(ResourceDownload.class);
+		getResourceConfig().register(ResourceIndex.class);
 	}
 
 	// //////////////////////////////////////////////////////////////////////////////////////
@@ -273,158 +283,221 @@ public class FileService extends RESTService {
 		return created;
 	}
 
-	/**
-	 * This operation is not yet supported by las2peer.
-	 * 
-	 * @param identifier A required unique name or hash value to identify this file.
-	 * @return Returns an HTTP status code and message with the result of the upload request.
-	 */
-	@DELETE
-	@Path(RESOURCE_BASENAME + "/{identifier}")
-	@Produces(MediaType.TEXT_PLAIN)
-	public HttpResponse deleteFile(@PathParam("identifier") String identifier) {
-		return new HttpResponse("Not implemented, yet!", HttpURLConnection.HTTP_NOT_IMPLEMENTED);
+	@Path(RESOURCE_FILES_BASENAME)
+	public static class ResourceFiles {
+
+		/**
+		 * This operation is not yet supported by las2peer.
+		 * 
+		 * @param identifier A required unique name or hash value to identify this file.
+		 * @return Returns an HTTP status code and message with the result of the upload request.
+		 */
+		@DELETE
+		@Path("/{identifier}")
+		@Produces(MediaType.TEXT_PLAIN)
+		public Response deleteFile(@PathParam("identifier") String identifier) {
+			return Response.status(Status.NOT_IMPLEMENTED).build();
+		}
+
+		@GET
+		@Path("/{subfolder1}/{subfolder2}/{subfolder3}/{subfolder4}/{subfolder5}/{identifier}")
+		public Response getFile(@PathParam("subfolder1") String subfolder1, @PathParam("subfolder2") String subfolder2,
+				@PathParam("subfolder3") String subfolder3, @PathParam("subfolder4") String subfolder4,
+				@PathParam("subfolder5") String subfolder5, @PathParam("identifier") String identifier) {
+			return getFile(subfolder1 + "/" + subfolder2 + "/" + subfolder3 + "/" + subfolder4 + "/" + subfolder5 + "/"
+					+ identifier);
+		}
+
+		@GET
+		@Path("/{subfolder1}/{subfolder2}/{subfolder3}/{subfolder4}/{identifier}")
+		public Response getFile(@PathParam("subfolder1") String subfolder1, @PathParam("subfolder2") String subfolder2,
+				@PathParam("subfolder3") String subfolder3, @PathParam("subfolder4") String subfolder4,
+				@PathParam("identifier") String identifier) {
+			return getFile(subfolder1 + "/" + subfolder2 + "/" + subfolder3 + "/" + subfolder4 + "/" + identifier);
+		}
+
+		@GET
+		@Path("/{subfolder1}/{subfolder2}/{subfolder3}/{identifier}")
+		public Response getFile(@PathParam("subfolder1") String subfolder1, @PathParam("subfolder2") String subfolder2,
+				@PathParam("subfolder3") String subfolder3, @PathParam("identifier") String identifier) {
+			return getFile(subfolder1 + "/" + subfolder2 + "/" + subfolder3 + "/" + identifier);
+		}
+
+		@GET
+		@Path("/{subfolder1}/{subfolder2}/{identifier}")
+		public Response getFile(@PathParam("subfolder1") String subfolder1, @PathParam("subfolder2") String subfolder2,
+				@PathParam("identifier") String identifier) {
+			return getFile(subfolder1 + "/" + subfolder2 + "/" + identifier);
+		}
+
+		@GET
+		@Path("/{subfolder1}/{identifier}")
+		public Response getFile(@PathParam("subfolder1") String subfolder1,
+				@PathParam("identifier") String identifier) {
+			return getFile(subfolder1 + "/" + identifier);
+		}
+
+		/**
+		 * This web API method downloads a file from the las2peer network. The file content is returned as binary
+		 * content.
+		 * 
+		 * @param identifier A unqiue name or hash value to identify the file.
+		 * @return Returns the file content as inline element for website integration or an error response if an error
+		 *         occurred.
+		 */
+		@GET
+		@Path("/{identifier}")
+		public Response getFile(@PathParam("identifier") String identifier) {
+			FileService service = (FileService) Context.getCurrent().getService();
+			return service.getFile(identifier, false);
+		}
+
+		/**
+		 * This method uploads a file to the las2peer network.
+		 * 
+		 * @param hostname The hostname this request was send to. Used in REST response URI.
+		 * @param contentType The (optional) content MIME type for this file. Usually set by the browser.
+		 * @param formData The data from an HTML form encoded as mulitpart.
+		 * @return Returns an HTTP status code and message with the result of the upload request.
+		 */
+		@POST
+		@Path("/")
+		@Produces(MediaType.TEXT_PLAIN)
+		@ApiResponses(
+				value = { @ApiResponse(
+						code = HttpURLConnection.HTTP_OK,
+						message = "File upload successfull"),
+						@ApiResponse(
+								code = HttpURLConnection.HTTP_CREATED,
+								message = "File successfully created"),
+						@ApiResponse(
+								code = HttpURLConnection.HTTP_BAD_REQUEST,
+								message = "File upload failed!"),
+						@ApiResponse(
+								code = HttpURLConnection.HTTP_INTERNAL_ERROR,
+								message = "File upload failed!") })
+		public Response postFile(@HeaderParam(
+				value = HttpHeaders.CONTENT_TYPE) String contentType, byte[] formData) {
+			FileService service = (FileService) Context.getCurrent().getService();
+			return service.uploadFile(contentType, formData, false);
+		}
+
+		/**
+		 * This method uploads a file to the las2peer network.
+		 * 
+		 * @param hostname The hostname this request was send to. Used in REST response URI.
+		 * @param contentType The (optional) content MIME type for this file. Usually set by the browser.
+		 * @param formData The data from an HTML form encoded as mulitpart.
+		 * @return Returns an HTTP status code and message with the result of the upload request.
+		 */
+		@PUT
+		@Path("/")
+		@Produces(MediaType.TEXT_PLAIN)
+		@ApiResponses(
+				value = { @ApiResponse(
+						code = HttpURLConnection.HTTP_OK,
+						message = "File upload successfull"),
+						@ApiResponse(
+								code = HttpURLConnection.HTTP_CREATED,
+								message = "File successfully created"),
+						@ApiResponse(
+								code = HttpURLConnection.HTTP_BAD_REQUEST,
+								message = "File upload failed!"),
+						@ApiResponse(
+								code = HttpURLConnection.HTTP_INTERNAL_ERROR,
+								message = "File upload failed!") })
+		public Response putFile(@HeaderParam(
+				value = HttpHeaders.CONTENT_TYPE) String contentType, byte[] formData) {
+			FileService service = (FileService) Context.getCurrent().getService();
+			// a file identifier is a enforced for put operation
+			return service.uploadFile(contentType, formData, true);
+		}
+
 	}
 
-	@GET
-	@Path(RESOURCE_BASENAME + "/{subfolder1}/{subfolder2}/{subfolder3}/{subfolder4}/{subfolder5}/{identifier}")
-	@Produces(MediaType.APPLICATION_OCTET_STREAM)
-	public HttpResponse getFile(@PathParam("subfolder1") String subfolder1, @PathParam("subfolder2") String subfolder2,
-			@PathParam("subfolder3") String subfolder3, @PathParam("subfolder4") String subfolder4,
-			@PathParam("subfolder5") String subfolder5, @PathParam("identifier") String identifier) {
-		return getFile(subfolder1 + "/" + subfolder2 + "/" + subfolder3 + "/" + subfolder4 + "/" + subfolder5 + "/"
-				+ identifier);
+	@Path(RESOURCE_DOWNLOAD_BASENAME)
+	public static class ResourceDownload {
+
+		@GET
+		@Path("/{subfolder1}/{subfolder2}/{subfolder3}/{subfolder4}/{subfolder5}/{identifier}")
+		public Response downloadFile(@PathParam("subfolder1") String subfolder1,
+				@PathParam("subfolder2") String subfolder2, @PathParam("subfolder3") String subfolder3,
+				@PathParam("subfolder4") String subfolder4, @PathParam("subfolder5") String subfolder5,
+				@PathParam("identifier") String identifier) {
+			return downloadFile(subfolder1 + "/" + subfolder2 + "/" + subfolder3 + "/" + subfolder4 + "/" + subfolder5
+					+ "/" + identifier);
+		}
+
+		@GET
+		@Path("/{subfolder1}/{subfolder2}/{subfolder3}/{subfolder4}/{identifier}")
+		public Response downloadFile(@PathParam("subfolder1") String subfolder1,
+				@PathParam("subfolder2") String subfolder2, @PathParam("subfolder3") String subfolder3,
+				@PathParam("subfolder4") String subfolder4, @PathParam("identifier") String identifier) {
+			return downloadFile(subfolder1 + "/" + subfolder2 + "/" + subfolder3 + "/" + subfolder4 + "/" + identifier);
+		}
+
+		@GET
+		@Path("/{subfolder1}/{subfolder2}/{subfolder3}/{identifier}")
+		public Response downloadFile(@PathParam("subfolder1") String subfolder1,
+				@PathParam("subfolder2") String subfolder2, @PathParam("subfolder3") String subfolder3,
+				@PathParam("identifier") String identifier) {
+			return downloadFile(subfolder1 + "/" + subfolder2 + "/" + subfolder3 + "/" + identifier);
+		}
+
+		@GET
+		@Path("/{subfolder1}/{subfolder2}/{identifier}")
+		public Response downloadFile(@PathParam("subfolder1") String subfolder1,
+				@PathParam("subfolder2") String subfolder2, @PathParam("identifier") String identifier) {
+			return downloadFile(subfolder1 + "/" + subfolder2 + "/" + identifier);
+		}
+
+		@GET
+		@Path("/{subfolder1}/{identifier}")
+		public Response downloadFile(@PathParam("subfolder1") String subfolder1,
+				@PathParam("identifier") String identifier) {
+			return downloadFile(subfolder1 + "/" + identifier);
+		}
+
+		/**
+		 * This web API method downloads a file from the las2peer network. The file content is returned as binary
+		 * content.
+		 * 
+		 * @param identifier A unqiue name or hash value to identify the file.
+		 * @return Returns the file content or an error response if an error occurred.
+		 */
+		@GET
+		@Path("/{identifier}")
+		public Response downloadFile(@PathParam("identifier") String identifier) {
+			FileService service = (FileService) Context.getCurrent().getService();
+			return service.getFile(identifier, true);
+		}
+
 	}
 
-	@GET
-	@Path(RESOURCE_BASENAME + "/{subfolder1}/{subfolder2}/{subfolder3}/{subfolder4}/{identifier}")
-	@Produces(MediaType.APPLICATION_OCTET_STREAM)
-	public HttpResponse getFile(@PathParam("subfolder1") String subfolder1, @PathParam("subfolder2") String subfolder2,
-			@PathParam("subfolder3") String subfolder3, @PathParam("subfolder4") String subfolder4,
-			@PathParam("identifier") String identifier) {
-		return getFile(subfolder1 + "/" + subfolder2 + "/" + subfolder3 + "/" + subfolder4 + "/" + identifier);
-	}
-
-	@GET
-	@Path(RESOURCE_BASENAME + "/{subfolder1}/{subfolder2}/{subfolder3}/{identifier}")
-	@Produces(MediaType.APPLICATION_OCTET_STREAM)
-	public HttpResponse getFile(@PathParam("subfolder1") String subfolder1, @PathParam("subfolder2") String subfolder2,
-			@PathParam("subfolder3") String subfolder3, @PathParam("identifier") String identifier) {
-		return getFile(subfolder1 + "/" + subfolder2 + "/" + subfolder3 + "/" + identifier);
-	}
-
-	@GET
-	@Path(RESOURCE_BASENAME + "/{subfolder1}/{subfolder2}/{identifier}")
-	@Produces(MediaType.APPLICATION_OCTET_STREAM)
-	public HttpResponse getFile(@PathParam("subfolder1") String subfolder1, @PathParam("subfolder2") String subfolder2,
-			@PathParam("identifier") String identifier) {
-		return getFile(subfolder1 + "/" + subfolder2 + "/" + identifier);
-	}
-
-	@GET
-	@Path(RESOURCE_BASENAME + "/{subfolder1}/{identifier}")
-	@Produces(MediaType.APPLICATION_OCTET_STREAM)
-	public HttpResponse getFile(@PathParam("subfolder1") String subfolder1,
-			@PathParam("identifier") String identifier) {
-		return getFile(subfolder1 + "/" + identifier);
-	}
-
-	/**
-	 * This web API method downloads a file from the las2peer network. The file content is returned as binary content.
-	 * 
-	 * @param identifier A unqiue name or hash value to identify the file.
-	 * @return Returns the file content as inline element for website integration or an error response if an error
-	 *         occurred.
-	 */
-	@GET
-	@Path(RESOURCE_BASENAME + "/{identifier}")
-	@Produces(MediaType.APPLICATION_OCTET_STREAM)
-	public HttpResponse getFile(@PathParam("identifier") String identifier) {
-		return getFile(identifier, false);
-	}
-
-	@GET
-	@Path(DOWNLOAD_PATH + "/{subfolder1}/{subfolder2}/{subfolder3}/{subfolder4}/{subfolder5}/{identifier}")
-	@Produces(MediaType.APPLICATION_OCTET_STREAM)
-	public HttpResponse downloadFile(@PathParam("subfolder1") String subfolder1,
-			@PathParam("subfolder2") String subfolder2, @PathParam("subfolder3") String subfolder3,
-			@PathParam("subfolder4") String subfolder4, @PathParam("subfolder5") String subfolder5,
-			@PathParam("identifier") String identifier) {
-		return downloadFile(subfolder1 + "/" + subfolder2 + "/" + subfolder3 + "/" + subfolder4 + "/" + subfolder5 + "/"
-				+ identifier);
-	}
-
-	@GET
-	@Path(DOWNLOAD_PATH + "/{subfolder1}/{subfolder2}/{subfolder3}/{subfolder4}/{identifier}")
-	@Produces(MediaType.APPLICATION_OCTET_STREAM)
-	public HttpResponse downloadFile(@PathParam("subfolder1") String subfolder1,
-			@PathParam("subfolder2") String subfolder2, @PathParam("subfolder3") String subfolder3,
-			@PathParam("subfolder4") String subfolder4, @PathParam("identifier") String identifier) {
-		return downloadFile(subfolder1 + "/" + subfolder2 + "/" + subfolder3 + "/" + subfolder4 + "/" + identifier);
-	}
-
-	@GET
-	@Path(DOWNLOAD_PATH + "/{subfolder1}/{subfolder2}/{subfolder3}/{identifier}")
-	@Produces(MediaType.APPLICATION_OCTET_STREAM)
-	public HttpResponse downloadFile(@PathParam("subfolder1") String subfolder1,
-			@PathParam("subfolder2") String subfolder2, @PathParam("subfolder3") String subfolder3,
-			@PathParam("identifier") String identifier) {
-		return downloadFile(subfolder1 + "/" + subfolder2 + "/" + subfolder3 + "/" + identifier);
-	}
-
-	@GET
-	@Path(DOWNLOAD_PATH + "/{subfolder1}/{subfolder2}/{identifier}")
-	@Produces(MediaType.APPLICATION_OCTET_STREAM)
-	public HttpResponse downloadFile(@PathParam("subfolder1") String subfolder1,
-			@PathParam("subfolder2") String subfolder2, @PathParam("identifier") String identifier) {
-		return downloadFile(subfolder1 + "/" + subfolder2 + "/" + identifier);
-	}
-
-	@GET
-	@Path(DOWNLOAD_PATH + "/{subfolder1}/{identifier}")
-	@Produces(MediaType.APPLICATION_OCTET_STREAM)
-	public HttpResponse downloadFile(@PathParam("subfolder1") String subfolder1,
-			@PathParam("identifier") String identifier) {
-		return downloadFile(subfolder1 + "/" + identifier);
-	}
-
-	/**
-	 * This web API method downloads a file from the las2peer network. The file content is returned as binary content.
-	 * 
-	 * @param identifier A unqiue name or hash value to identify the file.
-	 * @return Returns the file content or an error response if an error occurred.
-	 */
-	@GET
-	@Path(DOWNLOAD_PATH + "/{identifier}")
-	@Produces(MediaType.APPLICATION_OCTET_STREAM)
-	public HttpResponse downloadFile(@PathParam("identifier") String identifier) {
-		return getFile(identifier, true);
-	}
-
-	private HttpResponse getFile(String identifier, boolean attachment) {
+	private Response getFile(String identifier, boolean attachment) {
 		try {
 			StoredFile file = fetchFileReal(identifier);
 			// set binary file content as response body
-			HttpResponse response = new HttpResponse(file.getContent(), HttpURLConnection.HTTP_OK);
+			ResponseBuilder responseBuilder = Response.ok(file.getContent());
 			// set headers
 			String disposition = "inline";
 			if (attachment) {
 				disposition = "attachment";
 			}
-			response.setHeader(HEADER_CONTENT_DISPOSITION, disposition + escapeFilename(file.getName()));
-			response.setHeader(HttpHeaders.LAST_MODIFIED, RFC2822FMT.format(new Date(file.getLastModified())));
-			response.setHeader(HttpHeaders.CONTENT_TYPE, file.getMimeType());
+			responseBuilder.header(HEADER_CONTENT_DISPOSITION, disposition + escapeFilename(file.getName()));
+			responseBuilder.header(HttpHeaders.LAST_MODIFIED, RFC2822FMT.format(new Date(file.getLastModified())));
+			responseBuilder.header(HttpHeaders.CONTENT_TYPE, file.getMimeType());
 			// following some non HTTP standard header fields
-			response.setHeader(HEADER_OWNERID, Long.toString(file.getOwnerId()));
-			response.setHeader(HEADER_CONTENT_DESCRIPTION, file.getDescription());
-			return response;
+			responseBuilder.header(HEADER_OWNERID, Long.toString(file.getOwnerId()));
+			responseBuilder.header(HEADER_CONTENT_DESCRIPTION, file.getDescription());
+			return responseBuilder.build();
 		} catch (ArtifactNotFoundException e) {
 			logger.log(Level.INFO, "File (" + identifier + ") not found!", e);
-			return new HttpResponse("404 Not Found", HttpURLConnection.HTTP_NOT_FOUND);
+			return Response.status(Status.NOT_FOUND).build();
 		} catch (Exception e) {
 			logger.log(Level.SEVERE, "Can't read file (" + identifier + ") content from network storage! ", e);
 			logger.printStackTrace(e);
-			return new HttpResponse("500 Internal Server Error", 500);
+			return Response.status(Status.INTERNAL_SERVER_ERROR).build();
 		}
 	}
 
@@ -443,76 +516,7 @@ public class FileService extends RESTService {
 		return result;
 	}
 
-	/**
-	 * This method uploads a file to the las2peer network.
-	 * 
-	 * @param hostname The hostname this request was send to. Used in REST response URI.
-	 * @param contentType The (optional) content MIME type for this file. Usually set by the browser.
-	 * @param formData The data from an HTML form encoded as mulitpart.
-	 * @return Returns an HTTP status code and message with the result of the upload request.
-	 */
-	@POST
-	@Path(RESOURCE_BASENAME)
-	@Produces(MediaType.TEXT_PLAIN)
-	@ApiResponses(
-			value = { @ApiResponse(
-					code = HttpURLConnection.HTTP_OK,
-					message = "File upload successfull"),
-					@ApiResponse(
-							code = HttpURLConnection.HTTP_CREATED,
-							message = "File successfully created"),
-					@ApiResponse(
-							code = HttpURLConnection.HTTP_BAD_REQUEST,
-							message = "File upload failed!"),
-					@ApiResponse(
-							code = HttpURLConnection.HTTP_INTERNAL_ERROR,
-							message = "File upload failed!") })
-	public HttpResponse postFile(@HeaderParam(
-			value = HttpHeaders.HOST) String hostname,
-			@HeaderParam(
-					value = HttpHeaders.CONTENT_TYPE) String contentType,
-			@ContentParam byte[] formData) {
-		return uploadFile(hostname, contentType, formData, false);
-	}
-
-	/**
-	 * This method uploads a file to the las2peer network.
-	 * 
-	 * @param hostname The hostname this request was send to. Used in REST response URI.
-	 * @param contentType The (optional) content MIME type for this file. Usually set by the browser.
-	 * @param formData The data from an HTML form encoded as mulitpart.
-	 * @return Returns an HTTP status code and message with the result of the upload request.
-	 */
-	@PUT
-	@Path(RESOURCE_BASENAME)
-	@Produces(MediaType.TEXT_PLAIN)
-	@ApiResponses(
-			value = { @ApiResponse(
-					code = HttpURLConnection.HTTP_OK,
-					message = "File upload successfull"),
-					@ApiResponse(
-							code = HttpURLConnection.HTTP_CREATED,
-							message = "File successfully created"),
-					@ApiResponse(
-							code = HttpURLConnection.HTTP_BAD_REQUEST,
-							message = "File upload failed!"),
-					@ApiResponse(
-							code = HttpURLConnection.HTTP_INTERNAL_ERROR,
-							message = "File upload failed!") })
-	public HttpResponse putFile(@HeaderParam(
-			value = HttpHeaders.HOST) String hostname,
-			@HeaderParam(
-					value = HttpHeaders.CONTENT_TYPE) String contentType,
-			@ContentParam byte[] formData) {
-		// a file identifier is a enforced for put operation
-		return uploadFile(hostname, contentType, formData, true);
-	}
-
-	private HttpResponse uploadFile(@HeaderParam(
-			value = HttpHeaders.HOST) String hostname,
-			@HeaderParam(
-					value = HttpHeaders.CONTENT_TYPE) String contentType,
-			@ContentParam byte[] formData, boolean enforceIdentifier) {
+	private Response uploadFile(String contentType, byte[] formData, boolean enforceIdentifier) {
 		String identifier = null;
 		try {
 			// parse given multipart form data
@@ -564,24 +568,24 @@ public class FileService extends RESTService {
 			} catch (MalformedStreamException e) {
 				// the stream failed to follow required syntax
 				logger.log(Level.SEVERE, e.getMessage(), e);
-				return new HttpResponse("File (" + identifier + ") upload failed! See log for details.",
-						HttpURLConnection.HTTP_BAD_REQUEST);
+				return Response.status(Status.BAD_REQUEST)
+						.entity("File (" + identifier + ") upload failed! See log for details.").build();
 			} catch (IOException e) {
 				// a read or write error occurred
 				logger.log(Level.SEVERE, e.getMessage(), e);
-				return new HttpResponse("File (" + identifier + ") upload failed! See log for details.",
-						HttpURLConnection.HTTP_INTERNAL_ERROR);
+				return Response.status(Status.INTERNAL_SERVER_ERROR)
+						.entity("File (" + identifier + ") upload failed! See log for details.").build();
 			}
 			// validate input
 			if (filecontent == null) {
-				return new HttpResponse(
-						"File (" + identifier
-								+ ") upload failed! No content provided. Add field named filecontent to your form.",
-						HttpURLConnection.HTTP_BAD_REQUEST);
+				return Response.status(Status.BAD_REQUEST)
+						.entity("File (" + identifier
+								+ ") upload failed! No content provided. Add field named filecontent to your form.")
+						.build();
 			}
 			// enforce identifier for PUT operations
 			if (enforceIdentifier && (identifier == null || identifier.isEmpty())) {
-				return new HttpResponse("No identfier provided", HttpURLConnection.HTTP_BAD_REQUEST);
+				return Response.status(Status.BAD_REQUEST).entity("No identfier provided").build();
 			}
 			// if the form doesn't especially describe a identifier, use (hashed?) filename as fallback
 			if ((identifier == null || identifier.isEmpty()) && filename != null && !filename.isEmpty()) {
@@ -593,99 +597,96 @@ public class FileService extends RESTService {
 			if (created) {
 				code = HttpURLConnection.HTTP_CREATED;
 			}
-			// return the complete URL for this resource
-			String uri = "/fileservice" + RESOURCE_BASENAME + "/" + identifier;
-			if (hostname != null && !hostname.isEmpty()) {
-				uri = "https://" + hostname + uri;
-			}
-			return new HttpResponse(uri, code);
+			return Response.status(code).entity("/" + identifier).build();
 		} catch (Exception e) {
 			logger.log(Level.SEVERE, "File upload failed!", e);
-			return new HttpResponse("File (" + identifier + ") upload failed! See log for details.",
-					HttpURLConnection.HTTP_INTERNAL_ERROR);
+			return Response.status(Status.INTERNAL_SERVER_ERROR)
+					.entity("File (" + identifier + ") upload failed! See log for details.").build();
 		}
 	}
 
-	@GET
-	@Path(RESOURCE_INDEX_JSON)
-	@Produces(MediaType.APPLICATION_JSON)
-	public HttpResponse getFileIndexJson() {
-		try {
-			// transform index list into JSON
-			JSONArray indexJson = new JSONArray();
-			for (StoredFileIndex index : getFileIndexReal()) {
-				indexJson.add(index.toJsonObject());
-			}
-			HttpResponse response = new HttpResponse(indexJson.toJSONString(), HttpURLConnection.HTTP_OK);
-			// set headers
-			response.setHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON);
-			return response;
-		} catch (Exception e) {
-			logger.log(Level.SEVERE, "Could not read file index!", e);
-			return new HttpResponse("Could not read file index! See log for details.",
-					HttpURLConnection.HTTP_INTERNAL_ERROR);
-		}
-	}
+	@Path("/")
+	public static class ResourceIndex {
 
-	@GET
-	@Path(RESOURCE_INDEX_HTML)
-	@Produces(MediaType.TEXT_HTML)
-	public HttpResponse getFileIndexHtml() {
-		try {
-			// transform index list into HTML
-			StringBuilder sb = new StringBuilder();
-			sb.append("<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 3.2 Final//EN\">\n");
-			sb.append("<html>\n");
-			sb.append("\t<head>\n");
-			sb.append("\t\t<meta charset=\"utf-8\">");
-			sb.append("\t\t<title>").append(getAgent().getServiceNameVersion().toString()).append("</title>\n");
-			sb.append("</head>\n");
-			sb.append("<body>\n");
-			sb.append("<h1>Index of " + getAgent().getServiceNameVersion().toString() + "</h1>\n");
-			sb.append("<table>\n");
-			sb.append("<tr>").append("<th>Identifier</th><th></th><th>Name</th>").append("<th>Last modified</th>")
-					.append("<th>Size</th>").append("<th>Description</th>").append("<th></th>").append("</tr>");
-			sb.append("<tr><th colspan=\"7\"><hr></th></tr>\n");
-			for (StoredFileIndex index : getFileIndexReal()) {
-				sb.append("<tr>");
-				String clsURI = "";
-				Path pathAnnotation = getClass().getAnnotation(Path.class);
-				if (pathAnnotation == null) {
-					throw new RuntimeException("There should be a ServicePath annotation for class '"
-							+ FileService.class.getCanonicalName() + "'");
+		@GET
+		@Path(RESOURCE_INDEX_JSON)
+		@Produces(MediaType.APPLICATION_JSON)
+		public Response getFileIndexJson() {
+			FileService service = (FileService) Context.getCurrent().getService();
+			try {
+				// transform index list into JSON
+				JSONArray indexJson = new JSONArray();
+				for (StoredFileIndex index : service.getFileIndexReal()) {
+					indexJson.add(index.toJsonObject());
 				}
-				clsURI = cleanSlashes(pathAnnotation.value());
-				String basename = cleanSlashes(RESOURCE_BASENAME);
-				String identifier = cleanSlashes(index.getIdentifier());
-				sb.append("<td><a href=\"" + clsURI + basename + identifier + "\">" + identifier + "</a></td>");
-				String download = cleanSlashes(DOWNLOAD_PATH);
-				sb.append("<td><a href=\"" + clsURI + download + identifier + "\">[&#8595;]</a></td>");
-				String strName = index.getName();
-				if (strName == null) {
-					strName = "";
-				}
-				sb.append("<td>" + strName + "</td>");
-				sb.append("<td>" + HTML_DATE_FMT.format(new Date(index.getLastModified())) + "</td>");
-				sb.append("<td align=\"right\">" + humanReadableByteCount(index.getFileSize(), true) + "</td>");
-				String description = index.getDescription();
-				if (description == null) {
-					description = "";
-				}
-				// escape HTML special characters in file description
-				sb.append("<td>" + StringEscapeUtils.escapeHtml4(description) + "</td>");
-				sb.append("</tr>\n");
+				return Response.ok(indexJson.toJSONString(), MediaType.APPLICATION_JSON).build();
+			} catch (Exception e) {
+				service.logger.log(Level.SEVERE, "Could not read file index!", e);
+				return Response.status(Status.INTERNAL_SERVER_ERROR)
+						.entity("Could not read file index! See log for details.").build();
 			}
-			sb.append("</table>\n").append("</body>\n");
-			sb.append("</html>\n");
-			HttpResponse response = new HttpResponse(sb.toString(), HttpURLConnection.HTTP_OK);
-			// set headers
-			response.setHeader(HttpHeaders.CONTENT_TYPE, MediaType.TEXT_HTML);
-			return response;
-		} catch (Exception e) {
-			logger.log(Level.SEVERE, "Could not read file index!", e);
-			return new HttpResponse("Could not read file index! See log for details.",
-					HttpURLConnection.HTTP_INTERNAL_ERROR);
 		}
+
+		@GET
+		@Path(RESOURCE_INDEX_HTML)
+		@Produces(MediaType.TEXT_HTML)
+		public Response getFileIndexHtml() {
+			FileService service = (FileService) Context.getCurrent().getService();
+			try {
+				// transform index list into HTML
+				StringBuilder sb = new StringBuilder();
+				sb.append("<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 3.2 Final//EN\">\n");
+				sb.append("<html>\n");
+				sb.append("\t<head>\n");
+				sb.append("\t\t<meta charset=\"utf-8\">");
+				sb.append("\t\t<title>").append(service.getAgent().getServiceNameVersion().toString())
+						.append("</title>\n");
+				sb.append("</head>\n");
+				sb.append("<body>\n");
+				sb.append("<h1>Index of " + service.getAgent().getServiceNameVersion().toString() + "</h1>\n");
+				sb.append("<table>\n");
+				sb.append("<tr>").append("<th>Identifier</th><th></th><th>Name</th>").append("<th>Last modified</th>")
+						.append("<th>Size</th>").append("<th>Description</th>").append("<th></th>").append("</tr>");
+				sb.append("<tr><th colspan=\"7\"><hr></th></tr>\n");
+				for (StoredFileIndex index : service.getFileIndexReal()) {
+					sb.append("<tr>");
+					String clsURI = "";
+					ServicePath pathAnnotation = FileService.class.getAnnotation(ServicePath.class);
+					if (pathAnnotation == null) {
+						throw new RuntimeException("There should be a ServicePath annotation for class '"
+								+ FileService.class.getCanonicalName() + "'");
+					}
+					clsURI = cleanSlashes(pathAnnotation.value());
+					String basename = cleanSlashes(RESOURCE_FILES_BASENAME);
+					String identifier = cleanSlashes(index.getIdentifier());
+					sb.append("<td><a href=\"" + clsURI + basename + identifier + "\">" + identifier + "</a></td>");
+					String download = cleanSlashes(RESOURCE_DOWNLOAD_BASENAME);
+					sb.append("<td><a href=\"" + clsURI + download + identifier + "\">[&#8595;]</a></td>");
+					String strName = index.getName();
+					if (strName == null) {
+						strName = "";
+					}
+					sb.append("<td>" + strName + "</td>");
+					sb.append("<td>" + HTML_DATE_FMT.format(new Date(index.getLastModified())) + "</td>");
+					sb.append("<td align=\"right\">" + humanReadableByteCount(index.getFileSize(), true) + "</td>");
+					String description = index.getDescription();
+					if (description == null) {
+						description = "";
+					}
+					// escape HTML special characters in file description
+					sb.append("<td>" + StringEscapeUtils.escapeHtml4(description) + "</td>");
+					sb.append("</tr>\n");
+				}
+				sb.append("</table>\n").append("</body>\n");
+				sb.append("</html>\n");
+				return Response.ok(sb.toString(), MediaType.TEXT_HTML).build();
+			} catch (Exception e) {
+				service.logger.log(Level.SEVERE, "Could not read file index!", e);
+				return Response.status(Status.INTERNAL_SERVER_ERROR)
+						.entity("Could not read file index! See log for details.").build();
+			}
+		}
+
 	}
 
 	/**
