@@ -205,7 +205,7 @@ public class FileService extends RESTService {
 			String description, boolean listFileOnIndex) throws IllegalArgumentException, StorageException,
 			SerializationException, CryptoException, AgentNotKnownException, L2pSecurityException {
 		Agent owner = getContext().getMainAgent();
-		if (shareWithGroup != null) {
+		if (shareWithGroup != null && !shareWithGroup.isEmpty()) {
 			Agent shareGroup = getContext().getAgent(Long.valueOf(shareWithGroup));
 			if (!(shareGroup instanceof GroupAgent)) {
 				throw new IllegalArgumentException("Can not share file with non group agent '" + shareWithGroup + "' ("
@@ -649,9 +649,11 @@ public class FileService extends RESTService {
 				sb.append("<tr>");
 				String clsURI = "";
 				Path pathAnnotation = getClass().getAnnotation(Path.class);
-				if (pathAnnotation != null) {
-					clsURI = cleanSlashes(pathAnnotation.value());
+				if (pathAnnotation == null) {
+					throw new RuntimeException("There should be a ServicePath annotation for class '"
+							+ FileService.class.getCanonicalName() + "'");
 				}
+				clsURI = cleanSlashes(pathAnnotation.value());
 				String basename = cleanSlashes(RESOURCE_BASENAME);
 				String identifier = cleanSlashes(index.getIdentifier());
 				sb.append("<td><a href=\"" + clsURI + basename + identifier + "\">" + identifier + "</a></td>");
