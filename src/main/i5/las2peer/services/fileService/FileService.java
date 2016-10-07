@@ -637,6 +637,7 @@ public class FileService extends RESTService {
 			sb.append("<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 3.2 Final//EN\">\n");
 			sb.append("<html>\n");
 			sb.append("\t<head>\n");
+			sb.append("\t\t<meta charset=\"utf-8\">");
 			sb.append("\t\t<title>").append(getAgent().getServiceNameVersion().toString()).append("</title>\n");
 			sb.append("</head>\n");
 			sb.append("<body>\n");
