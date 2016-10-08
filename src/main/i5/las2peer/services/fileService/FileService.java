@@ -535,13 +535,19 @@ public class FileService extends RESTService {
 					// these data belong to the file input form element
 					String fullFilename = partFilecontent.getHeader(HEADER_CONTENT_DISPOSITION)
 							.getParameter("filename");
-					try {
-						filename = Paths.get(fullFilename).getFileName().toString();
-					} catch (InvalidPathException e) {
-						logger.log(Level.FINER,
-								"Could not extract filename from '" + fullFilename + "', " + e.toString());
-						// use full filename as fallback
-						filename = fullFilename;
+					if (fullFilename != null) {
+						if (fullFilename.isEmpty()) {
+							return Response.status(Status.BAD_REQUEST).entity("Empty filename not allowed").build();
+						} else {
+							try {
+								filename = Paths.get(fullFilename).getFileName().toString();
+							} catch (InvalidPathException e) {
+								logger.log(Level.FINER,
+										"Could not extract filename from '" + fullFilename + "', " + e.toString());
+								// use full filename as fallback
+								filename = fullFilename;
+							}
+						}
 					}
 					filecontent = partFilecontent.getContentRaw();
 					mimeType = partFilecontent.getContentType();
@@ -552,11 +558,6 @@ public class FileService extends RESTService {
 				if (partIdentifier != null) {
 					// these data belong to the (optional) file id text input form element
 					identifier = partIdentifier.getContent();
-				}
-				FormDataPart partMimetype = parts.get("mimetype");
-				if (partMimetype != null) {
-					// optional mime type field, doesn't overwrite filecontents mime type
-					mimeType = partMimetype.getContent();
 				}
 				FormDataPart partShareWithGroup = parts.get("sharewithgroup");
 				if (partShareWithGroup != null) {
@@ -583,7 +584,7 @@ public class FileService extends RESTService {
 			if (filecontent == null) {
 				return Response.status(Status.BAD_REQUEST)
 						.entity("File (" + identifier
-								+ ") upload failed! No content provided. Add field named filecontent to your form.")
+								+ ") upload failed! No content provided. Add field 'filecontent' to your form.")
 						.build();
 			}
 			// enforce identifier for PUT operations
