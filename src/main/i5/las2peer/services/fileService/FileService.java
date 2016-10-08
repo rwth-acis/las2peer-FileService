@@ -545,8 +545,8 @@ public class FileService extends RESTService {
 					}
 					filecontent = partFilecontent.getContentRaw();
 					mimeType = partFilecontent.getContentType();
-					logger.info("upload request (" + filename + ") of mime type '" + mimeType + "' with content length "
-							+ filecontent.length);
+					logger.info("upload request for (" + filename + ") with mime type '" + mimeType + "' and size "
+							+ filecontent.length + " bytes");
 				}
 				FormDataPart partIdentifier = parts.get("identifier");
 				if (partIdentifier != null) {
