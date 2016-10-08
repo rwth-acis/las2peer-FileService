@@ -517,6 +517,9 @@ public class FileService extends RESTService {
 	}
 
 	private Response uploadFile(String contentType, byte[] formData, boolean enforceIdentifier) {
+		if (formData == null || formData.length < 1) {
+			return Response.status(Status.BAD_REQUEST).entity("File upload failed! No form data at all.").build();
+		}
 		String identifier = null;
 		try {
 			// parse given multipart form data
