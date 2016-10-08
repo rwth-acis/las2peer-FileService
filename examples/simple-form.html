@@ -1,0 +1,21 @@
+<!-- This form only uses plain HTML and may be integrated in your website to upload files to a las2peer network using FileService -->
+<form method="post" enctype="multipart/form-data" action="http://localhost:14580/fileservice/files">
+  <div>
+    <p>Select a file from your file system to upload.</p>
+    <label for="inputFile">File input</label>
+    <input type="file" id="inputFile" name="filecontent">
+  </div>
+  <div>
+    <label for="inputIdentifier">Identifier (optional)</label>
+    <input type="text" id="inputIdentifier" name="identifier" placeholder="must be unique">
+  </div>
+  <div>
+    <label for="inputShareWithGroup">share with group</label>
+    <input type="text" id="inputShareWithGroup" name="sharewithgroup" placeholder="enter group id">
+  </div>
+  <div>
+    <label for="inputDescription">Description</label>
+    <textarea id="inputDescription" name="description" rows="3"></textarea>
+  </div>
+  <button type="submit">Press</button> to upload the file!
+</form>
