@@ -528,6 +528,7 @@ public class FileService extends RESTService {
 			String mimeType = null;
 			String shareWithGroup = null;
 			String description = null;
+			boolean listFileOnIndex = true;
 			try {
 				Map<String, FormDataPart> parts = MultipartHelper.getParts(formData, contentType);
 				FormDataPart partFilecontent = parts.get("filecontent");
@@ -569,6 +570,11 @@ public class FileService extends RESTService {
 					// optional description text input form element
 					description = partDescription.getContent();
 				}
+				FormDataPart partListFileOnIndex = parts.get("excludefromindex");
+				if (partListFileOnIndex != null && partListFileOnIndex.getContent().equalsIgnoreCase("on")) {
+					// optional hide from index
+					listFileOnIndex = false;
+				}
 			} catch (MalformedStreamException e) {
 				// the stream failed to follow required syntax
 				logger.log(Level.SEVERE, e.getMessage(), e);
@@ -596,7 +602,8 @@ public class FileService extends RESTService {
 				logger.info("No file identifier provided using hashed filename as fallback");
 				identifier = Long.toString(SimpleTools.longHash(filename));
 			}
-			boolean created = storeFile(identifier, filename, filecontent, mimeType, shareWithGroup, description);
+			boolean created = storeFile(identifier, filename, filecontent, mimeType, shareWithGroup, description,
+					listFileOnIndex);
 			int code = HttpURLConnection.HTTP_OK;
 			if (created) {
 				code = HttpURLConnection.HTTP_CREATED;
