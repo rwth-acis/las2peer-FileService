@@ -578,9 +578,12 @@ public class FileService extends RESTService {
 					description = partDescription.getContent();
 				}
 				FormDataPart partListFileOnIndex = parts.get("excludefromindex");
-				if (partListFileOnIndex != null && partListFileOnIndex.getContent().equalsIgnoreCase("on")) {
-					// optional hide from index
-					listFileOnIndex = false;
+				if (partListFileOnIndex != null) {
+					String value = partListFileOnIndex.getContent();
+					if (value.equalsIgnoreCase("on") || value.equalsIgnoreCase("true")) {
+						// optional hide from index
+						listFileOnIndex = false;
+					}
 				}
 			} catch (MalformedStreamException e) {
 				// the stream failed to follow required syntax
