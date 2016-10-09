@@ -1,0 +1,7 @@
+For a Polymer widget example, take a look at the following project:
+
+https://github.com/rwth-acis/las2peer-file-upload-widget
+
+or use the following command to install it using bower (https://bower.io/):
+
+bower install git://github.com/rwth-acis/las2peer-file-upload-widget.git
