@@ -680,8 +680,8 @@ public class FileService extends RESTService {
 					String clsURI = "";
 					ServicePath pathAnnotation = FileService.class.getAnnotation(ServicePath.class);
 					if (pathAnnotation == null) {
-						throw new RuntimeException("There should be a ServicePath annotation for class '"
-								+ FileService.class.getCanonicalName() + "'");
+						throw new RuntimeException("There should be a " + ServicePath.class.getCanonicalName()
+								+ " annotation for class '" + FileService.class.getCanonicalName() + "'");
 					}
 					clsURI = cleanSlashes(pathAnnotation.value());
 					String basename = cleanSlashes(RESOURCE_FILES_BASENAME);
