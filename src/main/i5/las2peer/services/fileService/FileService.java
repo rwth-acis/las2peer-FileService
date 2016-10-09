@@ -565,7 +565,21 @@ public class FileService extends RESTService {
 				FormDataPart partIdentifier = parts.get("identifier");
 				if (partIdentifier != null) {
 					// these data belong to the (optional) file id text input form element
-					identifier = partIdentifier.getContent();
+					identifier = partIdentifier.getContent().trim();
+					// validate identifier
+					if (identifier.contains("//")) {
+						return Response.status(Status.BAD_REQUEST).entity(
+								"Invalid file identifier (" + identifier + "). Must not contain double slashes.")
+								.build();
+					} else if (identifier.startsWith("/")) {
+						return Response.status(Status.BAD_REQUEST)
+								.entity("Invalid file identifier (" + identifier + "). Must not start with slash.")
+								.build();
+					} else if (identifier.endsWith("/")) {
+						return Response.status(Status.BAD_REQUEST)
+								.entity("Invalid file identifier (" + identifier + "). Must not end with slash.")
+								.build();
+					}
 				}
 				FormDataPart partShareWithGroup = parts.get("sharewithgroup");
 				if (partShareWithGroup != null) {
