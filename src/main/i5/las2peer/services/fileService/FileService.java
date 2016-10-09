@@ -538,6 +538,9 @@ public class FileService extends RESTService {
 				FormDataPart partFilecontent = parts.get("filecontent");
 				if (partFilecontent != null) {
 					// these data belong to the file input form element
+					if (partFilecontent.getContent().equalsIgnoreCase("undefined")) {
+						return Response.status(Status.BAD_REQUEST).entity("No file content submitted.").build();
+					}
 					String fullFilename = partFilecontent.getHeader(HEADER_CONTENT_DISPOSITION)
 							.getParameter("filename");
 					if (fullFilename != null) {
