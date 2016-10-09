@@ -624,7 +624,7 @@ public class FileService extends RESTService {
 			if (created) {
 				code = HttpURLConnection.HTTP_CREATED;
 			}
-			return Response.status(code).entity("/" + identifier).build();
+			return Response.status(code).entity(identifier).build();
 		} catch (Exception e) {
 			logger.log(Level.SEVERE, "File upload failed!", e);
 			return Response.status(Status.INTERNAL_SERVER_ERROR)
