@@ -216,13 +216,17 @@ public class FileService extends RESTService {
 			SerializationException, CryptoException, AgentNotKnownException, L2pSecurityException {
 		Agent owner = getContext().getMainAgent();
 		if (shareWithGroup != null && !shareWithGroup.isEmpty()) {
-			Agent shareGroup = getContext().getAgent(Long.valueOf(shareWithGroup));
-			if (!(shareGroup instanceof GroupAgent)) {
-				throw new IllegalArgumentException("Can not share file with non group agent '" + shareWithGroup + "' ("
-						+ shareGroup.getClass().getCanonicalName() + ")");
+			try {
+				Agent shareGroup = getContext().getAgent(Long.valueOf(shareWithGroup));
+				if (!(shareGroup instanceof GroupAgent)) {
+					throw new IllegalArgumentException("Can not share file with non group agent '" + shareWithGroup
+							+ "' (" + shareGroup.getClass().getCanonicalName() + ")");
+				}
+				((GroupAgent) shareGroup).unlockPrivateKey(getContext().getMainAgent());
+				owner = shareGroup;
+			} catch (AgentNotKnownException e) {
+				throw new IllegalArgumentException("Can not share with (" + shareWithGroup + "). Agent not found.");
 			}
-			((GroupAgent) shareGroup).unlockPrivateKey(getContext().getMainAgent());
-			owner = shareGroup;
 		}
 		return storeFileReal(owner, new StoredFile(identifier, filename, content, new Date().getTime(), owner.getId(),
 				mimeType, description), listFileOnIndex);
@@ -602,8 +606,14 @@ public class FileService extends RESTService {
 				logger.info("No file identifier provided using hashed filename as fallback");
 				identifier = Long.toString(SimpleTools.longHash(filename));
 			}
-			boolean created = storeFile(identifier, filename, filecontent, mimeType, shareWithGroup, description,
-					listFileOnIndex);
+			boolean created = false;
+			try {
+				created = storeFile(identifier, filename, filecontent, mimeType, shareWithGroup, description,
+						listFileOnIndex);
+			} catch (IllegalArgumentException e) {
+				logger.log(Level.SEVERE, "File upload failed!", e);
+				return Response.status(Status.BAD_REQUEST).entity(e.getMessage()).build();
+			}
 			int code = HttpURLConnection.HTTP_OK;
 			if (created) {
 				code = HttpURLConnection.HTTP_CREATED;
