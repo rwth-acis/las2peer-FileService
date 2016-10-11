@@ -26,6 +26,7 @@ public class FileServiceTest {
 	private static final String TEST_IDENTIFIER = "helloworld.txt";
 	private static final String TEST_NAME = "test file";
 	private static final byte[] TEST_CONTENT = "Hello World!".getBytes(StandardCharsets.UTF_8);
+	private static final byte[] TEST_CONTENT2 = "Hello User A!".getBytes(StandardCharsets.UTF_8);
 	private static final String TEST_MIME = "text/plain";
 	private static final String TEST_DESCRIPTION = "just a test file";
 
@@ -199,6 +200,25 @@ public class FileServiceTest {
 			Assert.assertEquals(TEST_MIME, map.get("mimeType"));
 			Assert.assertEquals(groupAB.getId(), map.get("ownerId"));
 			Assert.assertEquals(TEST_DESCRIPTION, map.get("description"));
+
+			// UserB changes the file and uploads its version
+			System.out.println("User B updating file");
+			mediatorA.invoke(FileService.class.getName(), "storeFile", new Serializable[] { TEST_IDENTIFIER, TEST_NAME,
+					TEST_CONTENT2, TEST_MIME, Long.toString(groupAB.getId()), TEST_DESCRIPTION }, false);
+
+			// UserA fetches the file again and reads changes from User B
+			System.out.println("downloading changed file");
+			@SuppressWarnings("unchecked")
+			Map<String, Object> map2 = (Map<String, Object>) mediatorB.invoke(FileService.class.getName(), "fetchFile",
+					new Serializable[] { TEST_IDENTIFIER }, false);
+
+			// validate fetched file
+			Assert.assertEquals(TEST_IDENTIFIER, map2.get("identifier"));
+			Assert.assertEquals(TEST_NAME, map2.get("name"));
+			Assert.assertArrayEquals(TEST_CONTENT2, (byte[]) map2.get("content"));
+			Assert.assertEquals(TEST_MIME, map2.get("mimeType"));
+			Assert.assertEquals(groupAB.getId(), map2.get("ownerId"));
+			Assert.assertEquals(TEST_DESCRIPTION, map2.get("description"));
 		} catch (Exception e) {
 			e.printStackTrace();
 			Assert.fail(e.toString());
