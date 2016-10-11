@@ -498,9 +498,11 @@ public class FileService extends RESTService {
 		} catch (ArtifactNotFoundException e) {
 			logger.log(Level.INFO, "File (" + identifier + ") not found!", e);
 			return Response.status(Status.NOT_FOUND).build();
+		} catch (L2pSecurityException | CryptoException e) {
+			logger.log(Level.INFO, e.toString(), e);
+			return Response.status(Status.FORBIDDEN).entity(e.getMessage()).build();
 		} catch (Exception e) {
 			logger.log(Level.SEVERE, "Can't read file (" + identifier + ") content from network storage! ", e);
-			logger.printStackTrace(e);
 			return Response.status(Status.INTERNAL_SERVER_ERROR).build();
 		}
 	}
