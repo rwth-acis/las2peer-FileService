@@ -93,7 +93,7 @@ public class FileService extends RESTService {
 	private static final SimpleDateFormat RFC2822FMT = new SimpleDateFormat("EEE, dd MMM yyyy HH:mm:ss Z (zzz)");
 	private static final String RESOURCE_FILES_BASENAME = "/files";
 	private static final String RESOURCE_DOWNLOAD_BASENAME = "/download";
-	private static final String INDEX_IDENTIFIER_PREFIX = "index-";
+	private static final String INDEX_IDENTIFIER_SUFFIX = "-index";
 	private static final String RESOURCE_INDEX_JSON = "/index.json";
 	private static final String RESOURCE_INDEX_HTML = "/index.html";
 	private static final SimpleDateFormat HTML_DATE_FMT = new SimpleDateFormat("yyyy-MM-dd HH:mm");
@@ -260,9 +260,9 @@ public class FileService extends RESTService {
 					file.getFileSize());
 			Envelope indexEnv = null;
 			try {
-				Envelope storedIndex = getContext().fetchEnvelope(getIndexIdentifier(owner));
+				Envelope storedIndex = getContext().fetchEnvelope(getIndexIdentifier());
 				@SuppressWarnings("unchecked")
-				ArrayList<StoredFileIndex> fileIndex = (ArrayList<StoredFileIndex>) storedIndex.getContent(owner);
+				ArrayList<StoredFileIndex> fileIndex = (ArrayList<StoredFileIndex>) storedIndex.getContent();
 				// remove old entries
 				Iterator<StoredFileIndex> itIndex = fileIndex.iterator();
 				while (itIndex.hasNext()) {
@@ -273,15 +273,15 @@ public class FileService extends RESTService {
 				}
 				// update file index
 				fileIndex.add(indexEntry);
-				indexEnv = getContext().createEnvelope(storedIndex, fileIndex, owner);
+				indexEnv = getContext().createUnencryptedEnvelope(storedIndex, fileIndex);
 			} catch (ArtifactNotFoundException e) {
 				logger.info("Index not found. Creating new one.");
 				ArrayList<StoredFileIndex> fileIndex = new ArrayList<>();
 				fileIndex.add(indexEntry);
-				indexEnv = getContext().createEnvelope(getIndexIdentifier(owner), fileIndex, owner);
+				indexEnv = getContext().createUnencryptedEnvelope(getIndexIdentifier(), fileIndex);
 			}
 			// store index envelope
-			getContext().storeEnvelope(indexEnv, owner);
+			getContext().storeEnvelope(indexEnv);
 		}
 		logger.info("stored file (" + file.getIdentifier() + ") in network storage");
 		return created;
@@ -772,10 +772,9 @@ public class FileService extends RESTService {
 	private ArrayList<StoredFileIndex> getFileIndexReal() throws AgentNotKnownException, StorageException,
 			CryptoException, L2pSecurityException, SerializationException {
 		try {
-			Envelope storedIndex = getContext().fetchEnvelope(getIndexIdentifier(getContext().getMainAgent()));
+			Envelope storedIndex = getContext().fetchEnvelope(getIndexIdentifier());
 			@SuppressWarnings("unchecked")
-			ArrayList<StoredFileIndex> indexList = (ArrayList<StoredFileIndex>) storedIndex
-					.getContent(getContext().getMainAgent());
+			ArrayList<StoredFileIndex> indexList = (ArrayList<StoredFileIndex>) storedIndex.getContent();
 			indexList.sort(StoredFileIndexComparator.INSTANCE);
 			return indexList;
 		} catch (ArtifactNotFoundException e) {
@@ -783,8 +782,8 @@ public class FileService extends RESTService {
 		}
 	}
 
-	private String getIndexIdentifier(Agent indexOwner) throws AgentNotKnownException {
-		return ENVELOPE_BASENAME + INDEX_IDENTIFIER_PREFIX + indexOwner.getId();
+	private String getIndexIdentifier() throws AgentNotKnownException {
+		return getAgent().getServiceNameVersion().toString() + INDEX_IDENTIFIER_SUFFIX;
 	}
 
 }
