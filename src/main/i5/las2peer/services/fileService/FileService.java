@@ -359,7 +359,6 @@ public class FileService extends RESTService {
 		/**
 		 * This method uploads a file to the las2peer network.
 		 * 
-		 * @param hostname The hostname this request was send to. Used in REST response URI.
 		 * @param contentType The (optional) content MIME type for this file. Usually set by the browser.
 		 * @param formData The data from an HTML form encoded as multipart.
 		 * @return Returns an HTTP status code and message with the result of the upload request.
@@ -389,7 +388,6 @@ public class FileService extends RESTService {
 		/**
 		 * This method uploads a file to the las2peer network.
 		 * 
-		 * @param hostname The hostname this request was send to. Used in REST response URI.
 		 * @param contentType The (optional) content MIME type for this file. Usually set by the browser.
 		 * @param formData The data from an HTML form encoded as multipart.
 		 * @return Returns an HTTP status code and message with the result of the upload request.
