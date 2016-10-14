@@ -262,7 +262,8 @@ public class FileService extends RESTService {
 			try {
 				Envelope storedIndex = getContext().fetchEnvelope(getIndexIdentifier());
 				@SuppressWarnings("unchecked")
-				ArrayList<StoredFileIndex> fileIndex = (ArrayList<StoredFileIndex>) storedIndex.getContent();
+				ArrayList<StoredFileIndex> fileIndex = (ArrayList<StoredFileIndex>) storedIndex
+						.getContent(getContext().getLocalNode().getAnonymous());
 				// remove old entries
 				Iterator<StoredFileIndex> itIndex = fileIndex.iterator();
 				while (itIndex.hasNext()) {
@@ -281,7 +282,7 @@ public class FileService extends RESTService {
 				indexEnv = getContext().createUnencryptedEnvelope(getIndexIdentifier(), fileIndex);
 			}
 			// store index envelope
-			getContext().storeEnvelope(indexEnv);
+			getContext().storeEnvelope(indexEnv, getContext().getLocalNode().getAnonymous());
 		}
 		logger.info("stored file (" + file.getIdentifier() + ") in network storage");
 		return created;
@@ -774,7 +775,8 @@ public class FileService extends RESTService {
 		try {
 			Envelope storedIndex = getContext().fetchEnvelope(getIndexIdentifier());
 			@SuppressWarnings("unchecked")
-			ArrayList<StoredFileIndex> indexList = (ArrayList<StoredFileIndex>) storedIndex.getContent();
+			ArrayList<StoredFileIndex> indexList = (ArrayList<StoredFileIndex>) storedIndex
+					.getContent(getContext().getLocalNode().getAnonymous());
 			indexList.sort(StoredFileIndexComparator.INSTANCE);
 			return indexList;
 		} catch (ArtifactNotFoundException e) {
