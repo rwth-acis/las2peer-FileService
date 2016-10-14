@@ -241,6 +241,7 @@ pause
     <available file="${user_agent1.path}" property="user_agent_exists1"/>
     <available file="${user_agent2.path}" property="user_agent_exists2"/>
     <available file="${user_agent3.path}" property="user_agent_exists3"/>
+	<available file="${group_agent12.path}" property="group_agent12_exists"/>
     
     <target name="generate_service_agent" depends="jar" unless="service_agent_exists">
         <echo message="Writing Service Agent xml to ${service_agent.path}"/>
@@ -270,7 +271,7 @@ pause
             <arg line="'${las2peer_user3.password}' '${las2peer_user3.name}' '${las2peer_user3.email}'"/>
         </java>
     </target>
-    <target name="generate_group_agent12" depends="generate_user_agent1, generate_user_agent2" unless="generate_group_agent12">
+    <target name="generate_group_agent12" depends="generate_user_agent1, generate_user_agent2" unless="group_agent12_exists">
         <echo message="Writing Group Agent xml to ${group_agent12.path}"/>
         <java classname="i5.las2peer.tools.GroupAgentGenerator" classpathref="libraries"
             failonerror="true" fork="true" output="${group_agent12.path}">
