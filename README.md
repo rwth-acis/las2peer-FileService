@@ -49,3 +49,6 @@ To provide a file download link, e.g. for attachments, just add:
 ```html
 <a href="http://localhost:14580/fileservice/download/[your logo image identifier]">Download</a>
 ```
+
+### How to build this service:
+See: https://github.com/rwth-acis/las2peer-Template-Project
