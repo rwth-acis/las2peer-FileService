@@ -72,6 +72,15 @@
         </ivy:settings>
     	<ivy:retrieve type="jar, bundle" conf="platform" pattern="${lib}/[artifact]-[revision].[ext]"/>
     	<ivy:retrieve type="jar, bundle" conf="bundle" pattern="${service}/[artifact]-[revision].[ext]"/>
+    	<path id="manifest.classpath">
+        	<fileset dir="${service}">
+        	    <include name="**/*.jar"/>
+        	    <exclude name="i5.las2peer.services.*.jar"/>
+        	</fileset>
+    	</path>
+		<pathconvert property="manifest.classpath.plain" refid="manifest.classpath" pathsep=" ">
+			<mapper><chainedmapper><flattenmapper /></chainedmapper></mapper>
+		</pathconvert>
     </target>
     
     
@@ -172,7 +181,7 @@ pause
             <manifest>
                 <attribute name="Library-Version" value="${service.version}" />
                 <attribute name="Library-SymbolicName" value="${service.name}" />
-            	<attribute name="Import-Library" value="${service.dependencies}" />
+            	<attribute name="Import-Library" value="${manifest.classpath.plain}" />
             </manifest>
         </jar>
         <!-- Add the same jar file to the service directory !-->
