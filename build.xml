@@ -175,15 +175,8 @@ pause
             	<attribute name="Import-Library" value="${service.dependencies}" />
             </manifest>
         </jar>
-        <!-- Add the same Jar to the Service Directory !-->
-        <jar jarfile="${service}/${service.name}-${service.version}.jar">
-            <fileset dir="${tmp.classes}" includes="${service.path}/**" />
-            <manifest>
-                <attribute name="Library-Version" value="${service.version}" />
-                <attribute name="Library-SymbolicName" value="${service.name}" />
-            	<attribute name="Import-Library" value="${service.dependencies}" />
-            </manifest>
-        </jar>
+        <!-- Add the same jar file to the service directory !-->
+    	<copy file="${export.jars}/${service.name}-${service.version}.jar" tofile="${service}/${service.name}-${service.version}.jar"/>
     </target>
     
     
