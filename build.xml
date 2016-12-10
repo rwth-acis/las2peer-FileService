@@ -24,7 +24,6 @@
     
     <property name="export" location="export" />
     <property name="export.doc" location="${export}/doc" />
-    <property name="export.jars" location="${export}/jars" />
     <property name="junit.report" location="${export}/test_reports" />
 
     <property name="lib" location="lib" />
@@ -84,7 +83,6 @@
     <target name="init_general">
         <tstamp/>
         <mkdir dir="${tmp}" />
-        <mkdir dir="${export}" />
         <mkdir dir="${startup}" />
         <mkdir dir="${log}" />
     </target>
@@ -92,10 +90,6 @@
     <target name="init_compile" depends="init_general, get_deps">
         <mkdir dir="${tmp.classes}" />
         <mkdir dir="${tmp.junit}" />
-    </target>
-    
-    <target name="init_jars" depends="init_general">
-        <mkdir dir="${export.jars}" />
     </target>
     
     <target name="init_doc" depends="init_general">
@@ -167,7 +161,7 @@ pause
     
     <!-- Generate Jars -->
     <target name="jar" depends="compile_main" description="--> jar">
-        <jar jarfile="${export.jars}/${service.name}-${service.version}.jar">
+        <jar jarfile="${service}/${service.name}-${service.version}.jar">
             <fileset dir="${tmp.classes}" includes="${service.path}/**" />
             <manifest>
                 <attribute name="Library-Version" value="${service.version}" />
@@ -175,8 +169,6 @@ pause
             	<attribute name="Import-Library" value="${service.dependencies}" />
             </manifest>
         </jar>
-        <!-- Add the same jar file to the service directory !-->
-    	<copy file="${export.jars}/${service.name}-${service.version}.jar" tofile="${service}/${service.name}-${service.version}.jar"/>
     </target>
     
     
