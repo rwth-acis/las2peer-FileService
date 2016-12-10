@@ -181,7 +181,7 @@ pause
     
     
     <!-- Generate Documentation -->
-    <target name="javadoc" depends="init_doc">
+    <target name="javadoc" depends="init_doc" description="--> generate Javadoc">
         <javadoc destdir="${export.doc}"
             author="true"
             version="true"
@@ -288,7 +288,7 @@ agent-user-${las2peer_user3.name}.xml;${las2peer_user3.password}
         <delete dir="${service}" />
     </target>
     
-    <target name="clean_all" depends="clean" description="--> clean all data">
+    <target name="distclean" depends="clean" description="--> wipe all data EVEN NODE STORAGE!">
         <delete dir="${log}"/>
         <delete dir="node-storage"/>
     </target>
