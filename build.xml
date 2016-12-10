@@ -181,12 +181,11 @@ pause
     
     
     <!-- Generate Documentation -->
-    <target name="javadoc" depends="init_doc" description="--> generate Javadoc">
+    <target name="javadoc" depends="compile_main" description="--> generate Javadoc">
         <javadoc destdir="${export.doc}"
             author="true"
             version="true"
             use="true"
-            source="1.7"
             windowtitle="Service Documentation"
             failonerror="yes"
             encoding="utf8"
