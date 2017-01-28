@@ -39,6 +39,7 @@ import i5.las2peer.persistency.Envelope;
 import i5.las2peer.restMapper.RESTService;
 import i5.las2peer.restMapper.annotations.ServicePath;
 import i5.las2peer.security.Agent;
+import i5.las2peer.security.AgentException;
 import i5.las2peer.security.GroupAgent;
 import i5.las2peer.security.L2pSecurityException;
 import i5.las2peer.services.fileService.StoredFileIndex.StoredFileIndexComparator;
@@ -158,12 +159,12 @@ public class FileService extends RESTService {
 	 * @throws IllegalArgumentException If the content is to large to be stored in an Envelope.
 	 * @throws SerializationException If an serialization issue occurs, mostly because of unexpected or damaged content.
 	 * @throws CryptoException If an encryption error occurs, mostly because of missing read permissions.
-	 * @throws AgentNotKnownException If the service is not yet started.
+	 * @throws AgentException If the service is not yet started.
 	 * @throws L2pSecurityException If the main agent isn't unlocked.
 	 */
 	public boolean storeFile(String identifier, String filename, byte[] content, String mimeType, String description)
-			throws IllegalArgumentException, StorageException, SerializationException, CryptoException,
-			AgentNotKnownException, L2pSecurityException {
+			throws IllegalArgumentException, StorageException, SerializationException, CryptoException, AgentException,
+			L2pSecurityException {
 		return storeFile(identifier, filename, content, mimeType, null, description);
 	}
 
@@ -183,12 +184,12 @@ public class FileService extends RESTService {
 	 * @throws IllegalArgumentException If the content is to large to be stored in an Envelope.
 	 * @throws SerializationException If an serialization issue occurs, mostly because of unexpected or damaged content.
 	 * @throws CryptoException If an encryption error occurs, mostly because of missing read permissions.
-	 * @throws AgentNotKnownException If the service is not yet started.
+	 * @throws AgentException If the service is not yet started.
 	 * @throws L2pSecurityException If the main agent isn't unlocked.
 	 */
 	public boolean storeFile(String identifier, String filename, byte[] content, String mimeType, String shareWithGroup,
 			String description) throws IllegalArgumentException, StorageException, SerializationException,
-			CryptoException, AgentNotKnownException, L2pSecurityException {
+			CryptoException, AgentException, L2pSecurityException {
 		return storeFile(identifier, filename, content, mimeType, shareWithGroup, description, true);
 	}
 
@@ -208,12 +209,12 @@ public class FileService extends RESTService {
 	 * @throws IllegalArgumentException If the content is to large to be stored in an Envelope.
 	 * @throws SerializationException If an serialization issue occurs, mostly because of unexpected or damaged content.
 	 * @throws CryptoException If an encryption error occurs, mostly because of missing read permissions.
-	 * @throws AgentNotKnownException If the service is not yet started.
+	 * @throws AgentException If the service is not yet started.
 	 * @throws L2pSecurityException If the main agent isn't unlocked.
 	 */
 	public boolean storeFile(String identifier, String filename, byte[] content, String mimeType, String shareWithGroup,
 			String description, boolean listFileOnIndex) throws IllegalArgumentException, StorageException,
-			SerializationException, CryptoException, AgentNotKnownException, L2pSecurityException {
+			SerializationException, CryptoException, AgentException, L2pSecurityException {
 		Agent owner = getContext().getMainAgent();
 		if (shareWithGroup != null && !shareWithGroup.isEmpty()) {
 			try {
