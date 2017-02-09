@@ -11,5 +11,6 @@
 	<classpathentry kind="lib" path="lib/las2peer-web-connector-0.6.7.jar"/>
 	<classpathentry kind="lib" path="lib/portlet-api-1.0.jar"/>
 	<classpathentry kind="lib" path="lib/servlet-api-2.4.jar"/>
+	<classpathentry kind="lib" path="lib/commons-lang3-3.5.jar"/>
 	<classpathentry kind="output" path="output"/>
 </classpath>
