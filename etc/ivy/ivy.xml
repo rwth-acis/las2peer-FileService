@@ -1,5 +1,5 @@
 <ivy-module version="2.0">
-    <info organisation="i5" module="las2peer-service" />
+    <info organisation="i5" module="${ant.project.name}" />
     <configurations defaultconf="bundle">
         <conf name="bundle" description="Additional dependencies loaded dynamically" />
         <conf name="platform" description="Jars needded for the las2peer platform" visibility="private" />
