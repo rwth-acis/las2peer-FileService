@@ -65,21 +65,9 @@ import net.minidev.json.JSONArray;
  * 
  */
 @ServicePath("/fileservice")
-@Api
-@SwaggerDefinition(
-		info = @Info(
-				title = "las2peer File Service",
-				version = "1.0",
-				description = "A las2peer file service for demonstration purposes.",
-				termsOfService = "http://your-terms-of-service-url.com",
-				contact = @Contact(
-						name = "ACIS Group",
-						url = "las2peer.org",
-						email = "las2peer@dbis.rwth-aachen.de"),
-				license = @License(
-						name = "ACIS License",
-						url = "https://github.com/rwth-acis/las2peer-File-Service/blob/master/LICENSE")))
 public class FileService extends RESTService {
+
+	public static final String API_VERSION = "1.0";
 
 	// this header is not known to javax.ws.rs.core.HttpHeaders
 	public static final String HEADER_CONTENT_DISPOSITION = "Content-Disposition";
@@ -289,6 +277,20 @@ public class FileService extends RESTService {
 		return created;
 	}
 
+	@Api(
+			value = "files")
+	@SwaggerDefinition(
+			info = @Info(
+					title = "las2peer File Service",
+					version = API_VERSION,
+					description = "A las2peer file service for demonstration purposes.",
+					contact = @Contact(
+							name = "ACIS Group",
+							url = "https://las2peer.org/",
+							email = "cuje@dbis.rwth-aachen.de"),
+					license = @License(
+							name = "ACIS License (BSD3)",
+							url = "https://github.com/rwth-acis/las2peer-FileService/blob/master/LICENSE")))
 	@Path(RESOURCE_FILES_BASENAME)
 	public static class ResourceFiles {
 
@@ -419,6 +421,20 @@ public class FileService extends RESTService {
 
 	}
 
+	@Api(
+			value = "download")
+	@SwaggerDefinition(
+			info = @Info(
+					title = "las2peer File Service",
+					version = API_VERSION,
+					description = "A las2peer file service for demonstration purposes.",
+					contact = @Contact(
+							name = "ACIS Group",
+							url = "https://las2peer.org/",
+							email = "cuje@dbis.rwth-aachen.de"),
+					license = @License(
+							name = "ACIS License (BSD3)",
+							url = "https://github.com/rwth-acis/las2peer-FileService/blob/master/LICENSE")))
 	@Path(RESOURCE_DOWNLOAD_BASENAME)
 	public static class ResourceDownload {
 
@@ -648,6 +664,20 @@ public class FileService extends RESTService {
 		}
 	}
 
+	@Api(
+			value = "index")
+	@SwaggerDefinition(
+			info = @Info(
+					title = "las2peer File Service",
+					version = API_VERSION,
+					description = "A las2peer file service for demonstration purposes.",
+					contact = @Contact(
+							name = "ACIS Group",
+							url = "https://las2peer.org/",
+							email = "cuje@dbis.rwth-aachen.de"),
+					license = @License(
+							name = "ACIS License (BSD3)",
+							url = "https://github.com/rwth-acis/las2peer-FileService/blob/master/LICENSE")))
 	@Path("/")
 	public static class ResourceIndex {
 
