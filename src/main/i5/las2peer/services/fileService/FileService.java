@@ -88,13 +88,7 @@ public class FileService extends RESTService {
 	private static final SimpleDateFormat HTML_DATE_FMT = new SimpleDateFormat("yyyy-MM-dd HH:mm");
 
 	// configurable properties
-	public static final long DEFAULT_MAX_FILE_SIZE_MB = 5; // MegaByte
-	private long maxFileSizeMB = DEFAULT_MAX_FILE_SIZE_MB;
-
-	public FileService() {
-		// read and set properties values
-		setFieldValues();
-	}
+	public static final long MAX_FILE_SIZE_MB = 5; // MegaByte
 
 	@Override
 	protected void initResources() {
@@ -226,8 +220,8 @@ public class FileService extends RESTService {
 			AgentNotKnownException, L2pSecurityException {
 		boolean created = false;
 		// limit (configurable) file size
-		if (file.getContent() != null && file.getContent().length > maxFileSizeMB * 1000000) {
-			throw new StorageException("File too big! Maximum size: " + maxFileSizeMB + " MB");
+		if (file.getContent() != null && file.getContent().length > MAX_FILE_SIZE_MB * 1000000) {
+			throw new StorageException("File too big! Maximum size: " + MAX_FILE_SIZE_MB + " MB");
 		}
 		// fetch or create envelope by file identifier
 		Envelope fileEnv = null;
