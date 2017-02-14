@@ -76,7 +76,7 @@ public class FileService extends RESTService {
 	public static final String HEADER_CONTENT_DESCRIPTION = "Content-Description";
 
 	// instantiate the logger class
-	private final L2pLogger logger = L2pLogger.getInstance(FileService.class.getName());
+	private static final L2pLogger logger = L2pLogger.getInstance(FileService.class.getName());
 
 	private static final String ENVELOPE_BASENAME = "file-";
 	private static final SimpleDateFormat RFC2822FMT = new SimpleDateFormat("EEE, dd MMM yyyy HH:mm:ss Z (zzz)");
@@ -694,7 +694,7 @@ public class FileService extends RESTService {
 				}
 				return Response.ok(indexJson.toJSONString(), MediaType.APPLICATION_JSON).build();
 			} catch (Exception e) {
-				service.logger.log(Level.SEVERE, "Could not read file index!", e);
+				logger.log(Level.SEVERE, "Could not read file index!", e);
 				return Response.status(Status.INTERNAL_SERVER_ERROR)
 						.entity("Could not read file index! See log for details.").build();
 			}
@@ -754,7 +754,7 @@ public class FileService extends RESTService {
 				sb.append("</html>\n");
 				return Response.ok(sb.toString(), MediaType.TEXT_HTML).build();
 			} catch (Exception e) {
-				service.logger.log(Level.SEVERE, "Could not read file index!", e);
+				logger.log(Level.SEVERE, "Could not read file index!", e);
 				return Response.status(Status.INTERNAL_SERVER_ERROR)
 						.entity("Could not read file index! See log for details.").build();
 			}
