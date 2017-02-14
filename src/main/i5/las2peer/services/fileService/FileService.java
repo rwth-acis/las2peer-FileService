@@ -69,8 +69,6 @@ public class FileService extends RESTService {
 
 	public static final String API_VERSION = "1.0";
 
-	// this header is not known to javax.ws.rs.core.HttpHeaders
-	public static final String HEADER_CONTENT_DISPOSITION = "Content-Disposition";
 	// non HTTP standard headers
 	public static final String HEADER_OWNERID = "ownerid";
 	public static final String HEADER_CONTENT_DESCRIPTION = "Content-Description";
@@ -498,7 +496,7 @@ public class FileService extends RESTService {
 			if (attachment) {
 				disposition = "attachment";
 			}
-			responseBuilder.header(HEADER_CONTENT_DISPOSITION, disposition + escapeFilename(file.getName()));
+			responseBuilder.header(HttpHeaders.CONTENT_DISPOSITION, disposition + escapeFilename(file.getName()));
 			responseBuilder.header(HttpHeaders.LAST_MODIFIED, RFC2822FMT.format(new Date(file.getLastModified())));
 			responseBuilder.header(HttpHeaders.CONTENT_TYPE, file.getMimeType());
 			// following some non HTTP standard header fields
