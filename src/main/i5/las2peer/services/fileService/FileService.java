@@ -1,11 +1,10 @@
 package i5.las2peer.services.fileService;
 
-import java.io.IOException;
+import java.io.ByteArrayOutputStream;
+import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
 import java.net.HttpURLConnection;
 import java.net.URLEncoder;
-import java.nio.file.InvalidPathException;
-import java.nio.file.Paths;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
@@ -15,7 +14,6 @@ import java.util.logging.Level;
 
 import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
-import javax.ws.rs.HeaderParam;
 import javax.ws.rs.POST;
 import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
@@ -27,8 +25,11 @@ import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.ResponseBuilder;
 import javax.ws.rs.core.Response.Status;
 
-import org.apache.commons.fileupload.MultipartStream.MalformedStreamException;
 import org.apache.commons.lang3.StringEscapeUtils;
+import org.glassfish.jersey.media.multipart.FormDataBodyPart;
+import org.glassfish.jersey.media.multipart.FormDataContentDisposition;
+import org.glassfish.jersey.media.multipart.FormDataParam;
+import org.glassfish.jersey.media.multipart.MultiPartFeature;
 
 import i5.las2peer.api.Context;
 import i5.las2peer.api.exceptions.ArtifactNotFoundException;
@@ -43,8 +44,6 @@ import i5.las2peer.security.AgentException;
 import i5.las2peer.security.GroupAgent;
 import i5.las2peer.security.L2pSecurityException;
 import i5.las2peer.services.fileService.StoredFileIndex.StoredFileIndexComparator;
-import i5.las2peer.services.fileService.multipart.FormDataPart;
-import i5.las2peer.services.fileService.multipart.MultipartHelper;
 import i5.las2peer.tools.CryptoException;
 import i5.las2peer.tools.SerializationException;
 import i5.las2peer.tools.SimpleTools;
@@ -73,6 +72,13 @@ public class FileService extends RESTService {
 	public static final String HEADER_OWNERID = "ownerid";
 	public static final String HEADER_CONTENT_DESCRIPTION = "Content-Description";
 
+	// upload request form field names
+	public static final String UPLOAD_IDENTIFIER = "identifier";
+	public static final String UPLOAD_FILE = "filecontent";
+	public static final String UPLOAD_SHARE_WITH_GROUP = "sharewithgroup";
+	public static final String UPLOAD_EXCLUDE_FROM_INDEX = "excludefromindex";
+	public static final String UPLOAD_DESCRIPTION = "description";
+
 	// instantiate the logger class
 	private static final L2pLogger logger = L2pLogger.getInstance(FileService.class.getName());
 
@@ -90,6 +96,7 @@ public class FileService extends RESTService {
 
 	@Override
 	protected void initResources() {
+		getResourceConfig().register(MultiPartFeature.class);
 		getResourceConfig().register(ResourceFiles.class);
 		getResourceConfig().register(ResourceDownload.class);
 		getResourceConfig().register(ResourceIndex.class);
@@ -355,8 +362,15 @@ public class FileService extends RESTService {
 		/**
 		 * This method uploads a file to the las2peer network.
 		 * 
-		 * @param contentType The (optional) content MIME type for this file. Usually set by the browser.
-		 * @param formData The data from an HTML form encoded as multipart.
+		 * @param identifier Value of the {@value #UPLOAD_IDENTIFIER}-tagged form/request element.
+		 * @param fileContentHeader The header of the submitted file used to determine the filename.
+		 * @param bodyPart The body part of the submitted file used to determine the mime type.
+		 * @param fileContent The actual submitted file content.
+		 * @param shareWithGroup The given value is interpreted as agent id and the agent gets exclusively read
+		 *            permission.
+		 * @param description A descriptive text used to describe the file.
+		 * @param excludeFromIndex If set to "true" or "on" as most browsers do the file is NOT listed in the global
+		 *            file index.
 		 * @return Returns an HTTP status code and message with the result of the upload request.
 		 */
 		@POST
@@ -375,17 +389,30 @@ public class FileService extends RESTService {
 						@ApiResponse(
 								code = HttpURLConnection.HTTP_INTERNAL_ERROR,
 								message = "File upload failed!") })
-		public Response postFile(@HeaderParam(
-				value = HttpHeaders.CONTENT_TYPE) String contentType, byte[] formData) {
+		public Response postFile(@FormDataParam(UPLOAD_IDENTIFIER) String identifier,
+				@FormDataParam(UPLOAD_FILE) FormDataContentDisposition fileContentHeader,
+				@FormDataParam(UPLOAD_FILE) FormDataBodyPart bodyPart,
+				@FormDataParam(UPLOAD_FILE) InputStream fileContent,
+				@FormDataParam(UPLOAD_SHARE_WITH_GROUP) String shareWithGroup,
+				@FormDataParam(UPLOAD_DESCRIPTION) String description,
+				@FormDataParam(UPLOAD_EXCLUDE_FROM_INDEX) String excludeFromIndex) {
 			FileService service = (FileService) Context.getCurrent().getService();
-			return service.uploadFile(contentType, formData, false);
+			return service.uploadFile(identifier, fileContentHeader, bodyPart, fileContent, shareWithGroup, description,
+					excludeFromIndex, false);
 		}
 
 		/**
 		 * This method uploads a file to the las2peer network.
 		 * 
-		 * @param contentType The (optional) content MIME type for this file. Usually set by the browser.
-		 * @param formData The data from an HTML form encoded as multipart.
+		 * @param identifier Value of the {@value #UPLOAD_IDENTIFIER}-tagged form/request element.
+		 * @param fileContentHeader The header of the submitted file used to determine the filename.
+		 * @param bodyPart The body part of the submitted file used to determine the mime type.
+		 * @param fileContent The actual submitted file content.
+		 * @param shareWithGroup The given value is interpreted as agent id and the agent gets exclusively read
+		 *            permission.
+		 * @param description A descriptive text used to describe the file.
+		 * @param excludeFromIndex If set to "true" or "on" as most browsers do the file is NOT listed in the global
+		 *            file index.
 		 * @return Returns an HTTP status code and message with the result of the upload request.
 		 */
 		@PUT
@@ -404,11 +431,17 @@ public class FileService extends RESTService {
 						@ApiResponse(
 								code = HttpURLConnection.HTTP_INTERNAL_ERROR,
 								message = "File upload failed!") })
-		public Response putFile(@HeaderParam(
-				value = HttpHeaders.CONTENT_TYPE) String contentType, byte[] formData) {
+		public Response putFile(@FormDataParam(UPLOAD_IDENTIFIER) String identifier,
+				@FormDataParam(UPLOAD_FILE) FormDataContentDisposition fileContentHeader,
+				@FormDataParam(UPLOAD_FILE) FormDataBodyPart bodyPart,
+				@FormDataParam(UPLOAD_FILE) InputStream fileContent,
+				@FormDataParam(UPLOAD_SHARE_WITH_GROUP) String shareWithGroup,
+				@FormDataParam(UPLOAD_DESCRIPTION) String description,
+				@FormDataParam(UPLOAD_EXCLUDE_FROM_INDEX) String excludeFromIndex) {
 			FileService service = (FileService) Context.getCurrent().getService();
 			// a file identifier is a enforced for put operation
-			return service.uploadFile(contentType, formData, true);
+			return service.uploadFile(identifier, fileContentHeader, bodyPart, fileContent, shareWithGroup, description,
+					excludeFromIndex, false);
 		}
 
 	}
@@ -530,102 +563,67 @@ public class FileService extends RESTService {
 		return result;
 	}
 
-	private Response uploadFile(String contentType, byte[] formData, boolean enforceIdentifier) {
-		if (formData == null || formData.length < 1) {
+	private Response uploadFile(String identifier, FormDataContentDisposition fileContentHeader,
+			FormDataBodyPart bodyPart, InputStream fileContentStream, String shareWithGroup, String description,
+			String excludeFromIndex, boolean enforceIdentifier) {
+		if (fileContentStream == null) {
 			return Response.status(Status.BAD_REQUEST).entity("File upload failed! No form data at all.").build();
 		}
-		String identifier = null;
 		try {
-			// parse given multipart form data
 			String filename = null;
-			byte[] filecontent = null;
-			String mimeType = null;
-			String shareWithGroup = null;
-			String description = null;
-			boolean listFileOnIndex = true;
-			try {
-				Map<String, FormDataPart> parts = MultipartHelper.getParts(formData, contentType);
-				FormDataPart partFilecontent = parts.get("filecontent");
-				if (partFilecontent != null) {
-					// these data belong to the file input form element
-					if (partFilecontent.getContent().equalsIgnoreCase("undefined")) {
-						return Response.status(Status.BAD_REQUEST).entity("No file content submitted.").build();
-					}
-					String fullFilename = partFilecontent.getHeader(HEADER_CONTENT_DISPOSITION)
-							.getParameter("filename");
-					if (fullFilename != null) {
-						if (fullFilename.isEmpty()) {
-							return Response.status(Status.BAD_REQUEST).entity("Empty filename not allowed").build();
-						} else {
-							try {
-								filename = Paths.get(fullFilename).getFileName().toString();
-							} catch (InvalidPathException e) {
-								logger.log(Level.FINER,
-										"Could not extract filename from '" + fullFilename + "', " + e.toString());
-								// use full filename as fallback
-								filename = fullFilename;
-							}
-						}
-					}
-					filecontent = partFilecontent.getContentRaw();
-					mimeType = partFilecontent.getContentType();
-					logger.info("upload request for (" + filename + ") with mime type '" + mimeType + "' and size "
-							+ filecontent.length + " bytes");
-				}
-				FormDataPart partIdentifier = parts.get("identifier");
-				if (partIdentifier != null) {
-					// these data belong to the (optional) file id text input form element
-					identifier = partIdentifier.getContent().trim();
-					// validate identifier
-					if (identifier.contains("//")) {
-						return Response.status(Status.BAD_REQUEST).entity(
-								"Invalid file identifier (" + identifier + "). Must not contain double slashes.")
-								.build();
-					} else if (identifier.startsWith("/")) {
-						return Response.status(Status.BAD_REQUEST)
-								.entity("Invalid file identifier (" + identifier + "). Must not start with slash.")
-								.build();
-					} else if (identifier.endsWith("/")) {
-						return Response.status(Status.BAD_REQUEST)
-								.entity("Invalid file identifier (" + identifier + "). Must not end with slash.")
-								.build();
-					}
-				}
-				FormDataPart partShareWithGroup = parts.get("sharewithgroup");
-				if (partShareWithGroup != null) {
-					// optional share with group
-					shareWithGroup = partShareWithGroup.getContent();
-				}
-				FormDataPart partDescription = parts.get("description");
-				if (partDescription != null) {
-					// optional description text input form element
-					description = partDescription.getContent();
-				}
-				FormDataPart partListFileOnIndex = parts.get("excludefromindex");
-				if (partListFileOnIndex != null) {
-					String value = partListFileOnIndex.getContent();
-					if (value.equalsIgnoreCase("on") || value.equalsIgnoreCase("true")) {
-						// optional hide from index
-						listFileOnIndex = false;
-					}
-				}
-			} catch (MalformedStreamException e) {
-				// the stream failed to follow required syntax
-				logger.log(Level.SEVERE, e.getMessage(), e);
-				return Response.status(Status.BAD_REQUEST)
-						.entity("File (" + identifier + ") upload failed! See log for details.").build();
-			} catch (IOException e) {
-				// a read or write error occurred
-				logger.log(Level.SEVERE, e.getMessage(), e);
-				return Response.status(Status.INTERNAL_SERVER_ERROR)
-						.entity("File (" + identifier + ") upload failed! See log for details.").build();
+			if (fileContentHeader != null) {
+				filename = fileContentHeader.getFileName();
 			}
+			String mimeType = null;
+			if (bodyPart != null) {
+				MediaType type = bodyPart.getMediaType();
+				if (type != null) {
+					mimeType = type.toString();
+				}
+			}
+			// write file content input stream into byte buffer
+			ByteArrayOutputStream buffer = new ByteArrayOutputStream();
+			int nRead;
+			byte[] data = new byte[4096];
+			while ((nRead = fileContentStream.read(data, 0, data.length)) != -1) {
+				if (buffer.size() < MAX_FILE_SIZE_MB * 1000000 - data.length) {
+					// still space left in local buffer
+					buffer.write(data, 0, nRead);
+				} else {
+					return Response.status(Status.REQUEST_ENTITY_TOO_LARGE)
+							.entity("Given request body exceeds limit of " + MAX_FILE_SIZE_MB + " MB").build();
+				}
+			}
+			byte[] filecontent = buffer.toByteArray();
 			// validate input
-			if (filecontent == null) {
+			if (filecontent.length < 1) {
 				return Response.status(Status.BAD_REQUEST)
 						.entity("File (" + identifier
 								+ ") upload failed! No content provided. Add field 'filecontent' to your form.")
 						.build();
+			}
+			logger.info("upload request for (" + filename + ") with mime type '" + mimeType + "' and size "
+					+ filecontent.length + " bytes");
+			if (identifier != null) {
+				// these data belong to the (optional) identifier text input form element
+				identifier = identifier.trim();
+				// validate identifier
+				if (identifier.contains("//")) {
+					return Response.status(Status.BAD_REQUEST)
+							.entity("Invalid file identifier (" + identifier + "). Must not contain double slashes.")
+							.build();
+				} else if (identifier.startsWith("/")) {
+					return Response.status(Status.BAD_REQUEST)
+							.entity("Invalid file identifier (" + identifier + "). Must not start with slash.").build();
+				} else if (identifier.endsWith("/")) {
+					return Response.status(Status.BAD_REQUEST)
+							.entity("Invalid file identifier (" + identifier + "). Must not end with slash.").build();
+				}
+			}
+			// optional hide from index
+			boolean listFileOnIndex = true;
+			if ("on".equalsIgnoreCase(excludeFromIndex) || "true".equalsIgnoreCase(excludeFromIndex)) {
+				listFileOnIndex = false;
 			}
 			// enforce identifier for PUT operations
 			if (enforceIdentifier && (identifier == null || identifier.isEmpty())) {
@@ -636,17 +634,16 @@ public class FileService extends RESTService {
 				logger.info("No file identifier provided using hashed filename as fallback");
 				identifier = Long.toString(SimpleTools.longHash(filename));
 			}
-			boolean created = false;
+			int code = HttpURLConnection.HTTP_OK;
 			try {
-				created = storeFile(identifier, filename, filecontent, mimeType, shareWithGroup, description,
+				boolean created = storeFile(identifier, filename, filecontent, mimeType, shareWithGroup, description,
 						listFileOnIndex);
+				if (created) {
+					code = HttpURLConnection.HTTP_CREATED;
+				}
 			} catch (IllegalArgumentException e) {
 				logger.log(Level.SEVERE, "File upload failed!", e);
 				return Response.status(Status.BAD_REQUEST).entity(e.getMessage()).build();
-			}
-			int code = HttpURLConnection.HTTP_OK;
-			if (created) {
-				code = HttpURLConnection.HTTP_CREATED;
 			}
 			return Response.status(code).entity(identifier).build();
 		} catch (Exception e) {
