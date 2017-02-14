@@ -2,24 +2,24 @@
 <form method="post" enctype="multipart/form-data" action="http://localhost:14580/fileservice/files">
   <div>
     <p>Select a file from your file system to upload.</p>
-    <label for="inputFile">File input</label>
-    <input type="file" id="inputFile" name="filecontent">
+    <label for="id_filecontent">File input</label>
+    <input type="file" id="id_filecontent" name="filecontent">
   </div>
   <div>
-    <label for="inputIdentifier">Identifier (optional)</label>
-    <input type="text" id="inputIdentifier" name="identifier" placeholder="must be unique">
+    <label for="id_identifier">Identifier (optional)</label>
+    <input type="text" id="id_identifier" name="identifier" placeholder="must be unique">
   </div>
   <div>
-    <label for="inputShareWithGroup">Share with group</label>
-    <input type="text" id="inputShareWithGroup" name="sharewithgroup" placeholder="enter group id">
+    <label for="id_sharewithgroup">Share with group</label>
+    <input type="text" id="id_sharewithgroup" name="sharewithgroup" placeholder="enter group id">
   </div>
   <div>
-    <label for="excludeFromIndexListing">Exclude file from index listing</label>
-    <input type="checkbox" id="excludeFromIndexListing" name="excludefromindex">
+    <label for="id_excludefromindex">Exclude file from index listing</label>
+    <input type="checkbox" id="id_excludefromindex" name="excludefromindex">
   </div>
   <div>
-    <label for="inputDescription">Description</label>
-    <textarea id="inputDescription" name="description" rows="3"></textarea>
+    <label for="id_description">Description</label>
+    <textarea id="id_description" name="description" rows="3"></textarea>
   </div>
   <button type="submit">Press</button> to upload the file!
 </form>
