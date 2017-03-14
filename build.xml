@@ -32,7 +32,8 @@
 		</fileset>
 	</path>
 
-	<property name="lib.junit" location="${lib}/junit-4.12.jar" />
+	<!-- jersey media needs to be on the classpath, because RESTMapper brings in an outdated one -->
+	<property name="lib.junit" location="${lib}/junit-4.12.jar:${lib}/jersey-media-multipart-2.26-b01.jar" />
 
 
 	<!-- Ivy Installation (Tool to fetch Libraries) -->
