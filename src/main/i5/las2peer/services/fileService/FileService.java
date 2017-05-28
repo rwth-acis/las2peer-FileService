@@ -32,20 +32,20 @@ import org.glassfish.jersey.media.multipart.FormDataParam;
 import org.glassfish.jersey.media.multipart.MultiPartFeature;
 
 import i5.las2peer.api.Context;
-import i5.las2peer.api.exceptions.ArtifactNotFoundException;
-import i5.las2peer.api.exceptions.StorageException;
+import i5.las2peer.api.ServiceException;
+import i5.las2peer.api.persistency.Envelope;
+import i5.las2peer.api.persistency.EnvelopeAccessDeniedException;
+import i5.las2peer.api.persistency.EnvelopeNotFoundException;
+import i5.las2peer.api.persistency.EnvelopeOperationFailedException;
+import i5.las2peer.api.security.Agent;
+import i5.las2peer.api.security.AgentAccessDeniedException;
+import i5.las2peer.api.security.AgentNotFoundException;
+import i5.las2peer.api.security.AgentOperationFailedException;
+import i5.las2peer.api.security.GroupAgent;
 import i5.las2peer.logging.L2pLogger;
-import i5.las2peer.p2p.AgentNotKnownException;
-import i5.las2peer.persistency.Envelope;
 import i5.las2peer.restMapper.RESTService;
 import i5.las2peer.restMapper.annotations.ServicePath;
-import i5.las2peer.security.Agent;
-import i5.las2peer.security.AgentException;
-import i5.las2peer.security.GroupAgent;
-import i5.las2peer.security.L2pSecurityException;
 import i5.las2peer.services.fileService.StoredFileIndex.StoredFileIndexComparator;
-import i5.las2peer.tools.CryptoException;
-import i5.las2peer.tools.SerializationException;
 import i5.las2peer.tools.SimpleTools;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiResponse;
@@ -112,22 +112,20 @@ public class FileService extends RESTService {
 	 * @param identifier A file identifier for the file that should be retrieved. Usually a unique name or hash value.
 	 * @return Returns the file including its metadata as Map. Fields set in the map are: identifier, name, content,
 	 *         lastModified, mimeType, ownerId and description.
-	 * @throws ArtifactNotFoundException If the file was not found.
-	 * @throws StorageException If an error occurs with the shared storage.
-	 * @throws CryptoException If an encryption error occurs, mostly because of missing read permissions.
-	 * @throws L2pSecurityException If the agent used to get content is not unlocked.
-	 * @throws SerializationException If an serialization issue occurs, mostly because of unexpected or damaged content.
+	 * @throws EnvelopeAccessDeniedException If the main agent is not able to access the envelope.
+	 * @throws EnvelopeNotFoundException If the envelope doesn not exist.
+	 * @throws EnvelopeOperationFailedException If an error occurred at the node or in the network.
 	 */
-	public Map<String, Object> fetchFile(String identifier) throws ArtifactNotFoundException, StorageException,
-			CryptoException, L2pSecurityException, SerializationException {
+	public Map<String, Object> fetchFile(String identifier)
+			throws EnvelopeAccessDeniedException, EnvelopeNotFoundException, EnvelopeOperationFailedException {
 		StoredFile file = fetchFileReal(identifier);
 		return file.toMap();
 	}
 
-	private StoredFile fetchFileReal(String identifier) throws ArtifactNotFoundException, StorageException,
-			CryptoException, L2pSecurityException, SerializationException {
+	private StoredFile fetchFileReal(String identifier)
+			throws EnvelopeAccessDeniedException, EnvelopeNotFoundException, EnvelopeOperationFailedException {
 		// fetch envelope by file identifier
-		Envelope env = getContext().fetchEnvelope(ENVELOPE_BASENAME + identifier);
+		Envelope env = Context.get().requestEnvelope(ENVELOPE_BASENAME + identifier);
 		// read content from envelope into string
 		StoredFile result = (StoredFile) env.getContent();
 		return result;
@@ -142,16 +140,17 @@ public class FileService extends RESTService {
 	 * @param mimeType The optional mime type for this file. Also set as header value in the web interface on download.
 	 * @param description An optional description for the file.
 	 * @return Returns true if the file was created and didn't exist before.
-	 * @throws StorageException If an exception with the shared storage occurs.
-	 * @throws IllegalArgumentException If the content is to large to be stored in an Envelope.
-	 * @throws SerializationException If an serialization issue occurs, mostly because of unexpected or damaged content.
-	 * @throws CryptoException If an encryption error occurs, mostly because of missing read permissions.
-	 * @throws AgentException If the service is not yet started.
-	 * @throws L2pSecurityException If the main agent isn't unlocked.
+	 * @throws AgentAccessDeniedException If the main agent cannot access the fetched agent.
+	 * @throws AgentOperationFailedException If an error occurred on the node.
+	 * @throws IllegalArgumentException If an argument is invalid
+	 * @throws EnvelopeAccessDeniedException If the main agent is not able to access the envelope
+	 * @throws EnvelopeOperationFailedException If an error occurred at the node or in the network
+	 * @throws NullPointerException If the given content is {@code null}
+	 * @throws ServiceException If the service is not started yet
 	 */
 	public boolean storeFile(String identifier, String filename, byte[] content, String mimeType, String description)
-			throws IllegalArgumentException, StorageException, SerializationException, CryptoException, AgentException,
-			L2pSecurityException {
+			throws AgentAccessDeniedException, AgentOperationFailedException, IllegalArgumentException,
+			EnvelopeAccessDeniedException, EnvelopeOperationFailedException, NullPointerException, ServiceException {
 		return storeFile(identifier, filename, content, mimeType, null, description);
 	}
 
@@ -167,16 +166,18 @@ public class FileService extends RESTService {
 	 *            Therefore the active agent must be member of this group.
 	 * @param description An optional description for the file.
 	 * @return Returns true if the file was created and didn't exist before.
-	 * @throws StorageException If an exception with the shared storage occurs.
-	 * @throws IllegalArgumentException If the content is to large to be stored in an Envelope.
-	 * @throws SerializationException If an serialization issue occurs, mostly because of unexpected or damaged content.
-	 * @throws CryptoException If an encryption error occurs, mostly because of missing read permissions.
-	 * @throws AgentException If the service is not yet started.
-	 * @throws L2pSecurityException If the main agent isn't unlocked.
+	 * @throws AgentAccessDeniedException If the main agent cannot access the fetched agent.
+	 * @throws AgentOperationFailedException If an error occurred on the node.
+	 * @throws IllegalArgumentException If an argument is invalid
+	 * @throws EnvelopeAccessDeniedException If the main agent is not able to access the envelope
+	 * @throws EnvelopeOperationFailedException If an error occurred at the node or in the network
+	 * @throws NullPointerException If the given content is {@code null}
+	 * @throws ServiceException If the service is not started yet
 	 */
 	public boolean storeFile(String identifier, String filename, byte[] content, String mimeType, String shareWithGroup,
-			String description) throws IllegalArgumentException, StorageException, SerializationException,
-			CryptoException, AgentException, L2pSecurityException {
+			String description)
+			throws AgentAccessDeniedException, AgentOperationFailedException, IllegalArgumentException,
+			EnvelopeAccessDeniedException, EnvelopeOperationFailedException, NullPointerException, ServiceException {
 		return storeFile(identifier, filename, content, mimeType, shareWithGroup, description, true);
 	}
 
@@ -192,65 +193,66 @@ public class FileService extends RESTService {
 	 * @param description An optional description for the file.
 	 * @param listFileOnIndex If true (default) the file is listed in the publicly viewable file index listing.
 	 * @return Returns true if the file was created and didn't exist before.
-	 * @throws StorageException If an exception with the shared storage occurs.
-	 * @throws IllegalArgumentException If the content is to large to be stored in an Envelope.
-	 * @throws SerializationException If an serialization issue occurs, mostly because of unexpected or damaged content.
-	 * @throws CryptoException If an encryption error occurs, mostly because of missing read permissions.
-	 * @throws AgentException If the service is not yet started.
-	 * @throws L2pSecurityException If the main agent isn't unlocked.
+	 * @throws AgentAccessDeniedException If the main agent cannot access the fetched agent.
+	 * @throws AgentOperationFailedException If an error occurred on the node.
+	 * @throws IllegalArgumentException If an argument is invalid
+	 * @throws EnvelopeAccessDeniedException If the main agent is not able to access the envelope
+	 * @throws EnvelopeOperationFailedException If an error occurred at the node or in the network
+	 * @throws NullPointerException If the given content is {@code null}
+	 * @throws ServiceException If the service is not started yet
 	 */
 	public boolean storeFile(String identifier, String filename, byte[] content, String mimeType, String shareWithGroup,
-			String description, boolean listFileOnIndex) throws IllegalArgumentException, StorageException,
-			SerializationException, CryptoException, AgentException, L2pSecurityException {
-		Agent owner = getContext().getMainAgent();
+			String description, boolean listFileOnIndex)
+			throws AgentAccessDeniedException, AgentOperationFailedException, IllegalArgumentException,
+			EnvelopeAccessDeniedException, EnvelopeOperationFailedException, NullPointerException, ServiceException {
+		Agent owner = Context.get().getMainAgent();
 		if (shareWithGroup != null && !shareWithGroup.isEmpty()) {
 			try {
-				Agent shareGroup = getContext().getAgent(Long.valueOf(shareWithGroup));
+				Agent shareGroup = Context.get().requestAgent(shareWithGroup);
 				if (!(shareGroup instanceof GroupAgent)) {
 					throw new IllegalArgumentException("Can not share file with non group agent '" + shareWithGroup
 							+ "' (" + shareGroup.getClass().getCanonicalName() + ")");
 				}
-				((GroupAgent) shareGroup).unlockPrivateKey(getContext().getMainAgent());
 				owner = shareGroup;
-			} catch (AgentNotKnownException e) {
+			} catch (AgentNotFoundException e) {
 				throw new IllegalArgumentException("Can not share with (" + shareWithGroup + "). Agent not found.");
 			}
 		}
 		return storeFileReal(owner, new StoredFile(identifier, filename, content, new Date().getTime(),
-				Long.toString(owner.getId()), mimeType, description), listFileOnIndex);
+				owner.getIdentifier(), mimeType, description), listFileOnIndex);
 	}
 
 	private boolean storeFileReal(Agent owner, StoredFile file, boolean listFileOnIndex)
-			throws StorageException, IllegalArgumentException, SerializationException, CryptoException,
-			AgentNotKnownException, L2pSecurityException {
+			throws IllegalArgumentException, EnvelopeAccessDeniedException, EnvelopeOperationFailedException,
+			ServiceException {
 		boolean created = false;
 		// limit (configurable) file size
 		if (file.getContent() != null && file.getContent().length > MAX_FILE_SIZE_MB * 1000000) {
-			throw new StorageException("File too big! Maximum size: " + MAX_FILE_SIZE_MB + " MB");
+			throw new IllegalArgumentException("File too big! Maximum size: " + MAX_FILE_SIZE_MB + " MB");
 		}
 		// fetch or create envelope by file identifier
 		Envelope fileEnv = null;
 		try {
-			Envelope storedFile = getContext().fetchEnvelope(ENVELOPE_BASENAME + file.getIdentifier());
-			// update envelope content
-			fileEnv = getContext().createEnvelope(storedFile, file, owner);
-		} catch (ArtifactNotFoundException e) {
+			fileEnv = Context.get().requestEnvelope(ENVELOPE_BASENAME + file.getIdentifier());
+		} catch (EnvelopeNotFoundException e) {
 			logger.info("File (" + file.getIdentifier() + ") not found. Creating new one. " + e.toString());
-			fileEnv = getContext().createEnvelope(ENVELOPE_BASENAME + file.getIdentifier(), file, owner);
+			fileEnv = Context.get().createEnvelope(ENVELOPE_BASENAME + file.getIdentifier(), owner);
 			created = true;
 		}
+		// update envelope content
+		fileEnv.setContent(file);
 		// store envelope with file content
-		getContext().storeEnvelope(fileEnv, owner);
+		Context.get().storeEnvelope(fileEnv, owner);
 		if (listFileOnIndex) {
-			// fetch or create file index envelope
 			StoredFileIndex indexEntry = new StoredFileIndex(file.getIdentifier(), file.getName(),
 					file.getLastModified(), file.getOwnerId(), file.getMimeType(), file.getDescription(),
 					file.getFileSize());
-			Envelope indexEnv = null;
+			// fetch or create file index envelope
+			Envelope indexEnv;
+			StoredFileIndexList fileIndex;
 			try {
-				Envelope storedIndex = getContext().fetchEnvelope(getIndexIdentifier());
-				StoredFileIndexList fileIndex = (StoredFileIndexList) storedIndex
-						.getContent(getContext().getLocalNode().getAnonymous());
+				indexEnv = Context.get().requestEnvelope(getIndexIdentifier());
+				fileIndex = (StoredFileIndexList) indexEnv.getContent();
 				// remove old entries
 				Iterator<StoredFileIndex> itIndex = fileIndex.iterator();
 				while (itIndex.hasNext()) {
@@ -259,17 +261,17 @@ public class FileService extends RESTService {
 						itIndex.remove();
 					}
 				}
-				// update file index
-				fileIndex.add(indexEntry);
-				indexEnv = getContext().createUnencryptedEnvelope(storedIndex, fileIndex);
-			} catch (ArtifactNotFoundException e) {
+			} catch (EnvelopeNotFoundException e) {
 				logger.info("Index not found. Creating new one.");
-				StoredFileIndexList fileIndex = new StoredFileIndexList();
-				fileIndex.add(indexEntry);
-				indexEnv = getContext().createUnencryptedEnvelope(getIndexIdentifier(), fileIndex);
+				indexEnv = Context.get().createEnvelope(getIndexIdentifier());
+				indexEnv.setPublic();
+				fileIndex = new StoredFileIndexList();
 			}
+			// update file index
+			fileIndex.add(indexEntry);
+			indexEnv.setContent(fileIndex);
 			// store index envelope
-			getContext().storeEnvelope(indexEnv, getContext().getLocalNode().getAnonymous());
+			Context.get().storeEnvelope(indexEnv, getAgent());
 		}
 		logger.info("stored file (" + file.getIdentifier() + ") in network storage");
 		return created;
@@ -537,12 +539,12 @@ public class FileService extends RESTService {
 			responseBuilder.header(HEADER_OWNERID, file.getOwnerId());
 			responseBuilder.header(HEADER_CONTENT_DESCRIPTION, file.getDescription());
 			return responseBuilder.build();
-		} catch (ArtifactNotFoundException e) {
+		} catch (EnvelopeNotFoundException e) {
 			logger.log(Level.INFO, "File (" + identifier + ") not found!", e);
 			return Response.status(Status.NOT_FOUND).build();
-		} catch (L2pSecurityException | CryptoException e) {
+		} catch (EnvelopeAccessDeniedException e) {
 			logger.log(Level.INFO, e.toString(), e);
-			return Response.status(Status.FORBIDDEN).entity(e.getMessage()).build();
+			return Response.status(Status.FORBIDDEN).entity(e.toString()).build();
 		} catch (Exception e) {
 			logger.log(Level.SEVERE, "Can't read file (" + identifier + ") content from network storage! ", e);
 			return Response.status(Status.INTERNAL_SERVER_ERROR).build();
@@ -558,7 +560,7 @@ public class FileService extends RESTService {
 				result += ";filename*=UTF-8''" + URLEncoder.encode(filename, "UTF-8").replace("+", "%20");
 			} catch (UnsupportedEncodingException e) {
 				// if this fails, we still have the "old" way
-				logger.log(Level.WARNING, e.getMessage(), e);
+				logger.log(Level.WARNING, e.toString(), e);
 			}
 		}
 		return result;
@@ -644,7 +646,11 @@ public class FileService extends RESTService {
 				}
 			} catch (IllegalArgumentException e) {
 				logger.log(Level.SEVERE, "File upload failed!", e);
-				return Response.status(Status.BAD_REQUEST).entity(e.getMessage()).build();
+				return Response.status(Status.BAD_REQUEST).entity(e.toString()).build();
+			} catch (EnvelopeAccessDeniedException e) {
+				logger.log(Level.SEVERE, "File upload failed!", e);
+				return Response.status(Status.FORBIDDEN).entity("403 - Forbidden\n" + e.toString() + "\nFile ("
+						+ identifier + ") upload failed! See log for details.").build();
 			}
 			return Response.status(code).entity(identifier).build();
 		} catch (Exception e) {
@@ -781,8 +787,8 @@ public class FileService extends RESTService {
 		return String.format("%.1f %sB", bytes / Math.pow(unit, exp), pre);
 	}
 
-	public ArrayList<Map<String, Object>> getFileIndex() throws AgentNotKnownException, StorageException,
-			CryptoException, L2pSecurityException, SerializationException {
+	public ArrayList<Map<String, Object>> getFileIndex()
+			throws EnvelopeAccessDeniedException, EnvelopeOperationFailedException, ServiceException {
 		ArrayList<Map<String, Object>> result = new ArrayList<>();
 		StoredFileIndexList fileIndex = getFileIndexReal();
 		for (StoredFileIndex index : fileIndex) {
@@ -791,20 +797,19 @@ public class FileService extends RESTService {
 		return result;
 	}
 
-	private StoredFileIndexList getFileIndexReal() throws AgentNotKnownException, StorageException, CryptoException,
-			L2pSecurityException, SerializationException {
+	private StoredFileIndexList getFileIndexReal()
+			throws EnvelopeAccessDeniedException, EnvelopeOperationFailedException, ServiceException {
 		try {
-			Envelope storedIndex = getContext().fetchEnvelope(getIndexIdentifier());
-			StoredFileIndexList indexList = (StoredFileIndexList) storedIndex
-					.getContent(getContext().getLocalNode().getAnonymous());
+			Envelope storedIndex = Context.get().requestEnvelope(getIndexIdentifier());
+			StoredFileIndexList indexList = (StoredFileIndexList) storedIndex.getContent();
 			indexList.sort(StoredFileIndexComparator.INSTANCE);
 			return indexList;
-		} catch (ArtifactNotFoundException e) {
+		} catch (EnvelopeNotFoundException e) {
 			return new StoredFileIndexList();
 		}
 	}
 
-	private String getIndexIdentifier() throws AgentNotKnownException {
+	private String getIndexIdentifier() throws ServiceException {
 		return getAgent().getServiceNameVersion().toString() + INDEX_IDENTIFIER_SUFFIX;
 	}
 

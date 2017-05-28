@@ -1,6 +1,6 @@
 <project name="las2peer-File-Service" default="jar" basedir="." xmlns:ivy="antlib:org.apache.ivy.ant">
 
-	<property name="core.version" value="0.6.7" />
+	<property name="core.version" value="0.7-SNAPSHOT" />
 
 	<property name="service.name" value="i5.las2peer.services.fileService" />
 	<property name="service.class" value="FileService" />

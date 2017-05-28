@@ -11,13 +11,13 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
+import i5.las2peer.api.p2p.ServiceNameVersion;
+import i5.las2peer.api.security.Agent;
 import i5.las2peer.p2p.PastryNodeImpl;
-import i5.las2peer.p2p.ServiceNameVersion;
-import i5.las2peer.security.Agent;
-import i5.las2peer.security.GroupAgent;
+import i5.las2peer.security.GroupAgentImpl;
 import i5.las2peer.security.Mediator;
-import i5.las2peer.security.ServiceAgent;
-import i5.las2peer.security.UserAgent;
+import i5.las2peer.security.ServiceAgentImpl;
+import i5.las2peer.security.UserAgentImpl;
 import i5.las2peer.services.fileService.FileService;
 import i5.las2peer.testing.TestSuite;
 
@@ -50,19 +50,19 @@ public class FileServiceTest {
 		try {
 			// create agents
 			System.out.println("creating agents...");
-			ServiceAgent service = ServiceAgent.createServiceAgent(
+			ServiceAgentImpl service = ServiceAgentImpl.createServiceAgent(
 					new ServiceNameVersion(FileService.class.getName(), "1.0"), "test-service-pass");
-			UserAgent userA = UserAgent.createUserAgent("test-pass-a");
+			UserAgentImpl userA = UserAgentImpl.createUserAgent("test-pass-a");
 
 			// start service instance on node 0
 			System.out.println("starting service on node 0");
-			service.unlockPrivateKey("test-service-pass");
+			service.unlock("test-service-pass");
 			nodes.get(0).storeAgent(service);
 			nodes.get(0).registerReceiver(service);
 
 			// UserA login at node 1
 			System.out.println("user a login at node 1");
-			userA.unlockPrivateKey("test-pass-a");
+			userA.unlock("test-pass-a");
 			nodes.get(1).storeAgent(userA);
 			Mediator mediatorA = nodes.get(1).createMediatorForAgent(userA);
 
@@ -83,7 +83,7 @@ public class FileServiceTest {
 			Assert.assertEquals(TEST_NAME, map.get("name"));
 			Assert.assertArrayEquals(TEST_CONTENT, (byte[]) map.get("content"));
 			Assert.assertEquals(TEST_MIME, map.get("mimeType"));
-			Assert.assertEquals(Long.toString(userA.getId()), map.get("ownerId"));
+			Assert.assertEquals(userA.getIdentifier(), map.get("ownerId"));
 			Assert.assertEquals(TEST_DESCRIPTION, map.get("description"));
 		} catch (Exception e) {
 			e.printStackTrace();
@@ -96,19 +96,19 @@ public class FileServiceTest {
 		try {
 			// create agents
 			System.out.println("creating agents...");
-			ServiceAgent service = ServiceAgent.createServiceAgent(
+			ServiceAgentImpl service = ServiceAgentImpl.createServiceAgent(
 					new ServiceNameVersion(FileService.class.getName(), "1.0"), "test-service-pass");
-			UserAgent userA = UserAgent.createUserAgent("test-pass-a");
+			UserAgentImpl userA = UserAgentImpl.createUserAgent("test-pass-a");
 
 			// start service instance on node 0
 			System.out.println("starting service on node 0");
-			service.unlockPrivateKey("test-service-pass");
+			service.unlock("test-service-pass");
 			nodes.get(0).storeAgent(service);
 			nodes.get(0).registerReceiver(service);
 
 			// UserA login at node 1
 			System.out.println("user a login at node 1");
-			userA.unlockPrivateKey("test-pass-a");
+			userA.unlock("test-pass-a");
 			nodes.get(1).storeAgent(userA);
 			Mediator mediatorA = nodes.get(1).createMediatorForAgent(userA);
 
@@ -128,7 +128,7 @@ public class FileServiceTest {
 			Assert.assertEquals(TEST_IDENTIFIER, map.get("identifier"));
 			Assert.assertEquals(TEST_NAME, map.get("name"));
 			Assert.assertEquals(TEST_MIME, map.get("mimeType"));
-			Assert.assertEquals(Long.toString(userA.getId()), map.get("ownerId"));
+			Assert.assertEquals(userA.getIdentifier(), map.get("ownerId"));
 			Assert.assertEquals(TEST_DESCRIPTION, map.get("description"));
 
 			// upload file again
@@ -154,38 +154,38 @@ public class FileServiceTest {
 		try {
 			// create agents
 			System.out.println("creating agents...");
-			ServiceAgent service = ServiceAgent.createServiceAgent(
+			ServiceAgentImpl service = ServiceAgentImpl.createServiceAgent(
 					new ServiceNameVersion(FileService.class.getName(), "1.0"), "test-service-pass");
-			UserAgent userA = UserAgent.createUserAgent("test-pass-a");
-			UserAgent userB = UserAgent.createUserAgent("test-pass-b");
-			GroupAgent groupAB = GroupAgent.createGroupAgent(new Agent[] { userA, userB });
+			UserAgentImpl userA = UserAgentImpl.createUserAgent("test-pass-a");
+			UserAgentImpl userB = UserAgentImpl.createUserAgent("test-pass-b");
+			GroupAgentImpl groupAB = GroupAgentImpl.createGroupAgent(new Agent[] { userA, userB });
 
 			// start service instance on node 0
 			System.out.println("starting service on node 0");
-			service.unlockPrivateKey("test-service-pass");
+			service.unlock("test-service-pass");
 			nodes.get(0).storeAgent(service);
 			nodes.get(0).registerReceiver(service);
 
 			// UserA login at node 1
 			System.out.println("user a login at node 1");
-			userA.unlockPrivateKey("test-pass-a");
+			userA.unlock("test-pass-a");
 			nodes.get(1).storeAgent(userA);
 			Mediator mediatorA = nodes.get(1).createMediatorForAgent(userA);
 
 			// UserB login at node 1
 			System.out.println("user b login at node 2");
-			userB.unlockPrivateKey("test-pass-b");
+			userB.unlock("test-pass-b");
 			nodes.get(1).storeAgent(userB);
 			Mediator mediatorB = nodes.get(1).createMediatorForAgent(userB);
 
 			// store group in network
-			groupAB.unlockPrivateKey(userA);
+			groupAB.unlock(userA);
 			nodes.get(1).storeAgent(groupAB);
 
 			// UserA uploads a file to the network and shares it with groupAB
 			System.out.println("uploading file");
 			mediatorA.invoke(FileService.class.getName(), "storeFile", new Serializable[] { TEST_IDENTIFIER, TEST_NAME,
-					TEST_CONTENT, TEST_MIME, Long.toString(groupAB.getId()), TEST_DESCRIPTION }, false);
+					TEST_CONTENT, TEST_MIME, groupAB.getIdentifier(), TEST_DESCRIPTION }, false);
 
 			// UserB downloads the file from the network
 			System.out.println("downloading file");
@@ -198,13 +198,13 @@ public class FileServiceTest {
 			Assert.assertEquals(TEST_NAME, map.get("name"));
 			Assert.assertArrayEquals(TEST_CONTENT, (byte[]) map.get("content"));
 			Assert.assertEquals(TEST_MIME, map.get("mimeType"));
-			Assert.assertEquals(Long.toString(groupAB.getId()), map.get("ownerId"));
+			Assert.assertEquals(groupAB.getIdentifier(), map.get("ownerId"));
 			Assert.assertEquals(TEST_DESCRIPTION, map.get("description"));
 
 			// UserB changes the file and uploads its version
 			System.out.println("User B updating file");
 			mediatorA.invoke(FileService.class.getName(), "storeFile", new Serializable[] { TEST_IDENTIFIER, TEST_NAME,
-					TEST_CONTENT2, TEST_MIME, Long.toString(groupAB.getId()), TEST_DESCRIPTION }, false);
+					TEST_CONTENT2, TEST_MIME, groupAB.getIdentifier(), TEST_DESCRIPTION }, false);
 
 			// UserA fetches the file again and reads changes from User B
 			System.out.println("downloading changed file");
@@ -217,7 +217,7 @@ public class FileServiceTest {
 			Assert.assertEquals(TEST_NAME, map2.get("name"));
 			Assert.assertArrayEquals(TEST_CONTENT2, (byte[]) map2.get("content"));
 			Assert.assertEquals(TEST_MIME, map2.get("mimeType"));
-			Assert.assertEquals(Long.toString(groupAB.getId()), map2.get("ownerId"));
+			Assert.assertEquals(groupAB.getIdentifier(), map2.get("ownerId"));
 			Assert.assertEquals(TEST_DESCRIPTION, map2.get("description"));
 		} catch (Exception e) {
 			e.printStackTrace();
