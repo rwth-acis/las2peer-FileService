@@ -361,7 +361,8 @@ public class FileService extends RESTService {
 		/**
 		 * This method uploads a file to the las2peer network.
 		 * 
-		 * @param identifier Value of the {@value #UPLOAD_IDENTIFIER}-tagged form/request element.
+		 * @param identifier Value of the {@value i5.las2peer.services.fileService.FileService#UPLOAD_IDENTIFIER}-tagged
+		 *            form/request element.
 		 * @param fileContentHeader The header of the submitted file used to determine the filename.
 		 * @param bodyPart The body part of the submitted file used to determine the mime type.
 		 * @param fileContent The actual submitted file content.
@@ -403,7 +404,8 @@ public class FileService extends RESTService {
 		/**
 		 * This method uploads a file to the las2peer network.
 		 * 
-		 * @param identifier Value of the {@value #UPLOAD_IDENTIFIER}-tagged form/request element.
+		 * @param identifier Value of the {@value i5.las2peer.services.fileService.FileService#UPLOAD_IDENTIFIER}-tagged
+		 *            form/request element.
 		 * @param fileContentHeader The header of the submitted file used to determine the filename.
 		 * @param bodyPart The body part of the submitted file used to determine the mime type.
 		 * @param fileContent The actual submitted file content.
