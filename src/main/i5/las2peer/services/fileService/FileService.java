@@ -249,8 +249,7 @@ public class FileService extends RESTService {
 			Envelope indexEnv = null;
 			try {
 				Envelope storedIndex = getContext().fetchEnvelope(getIndexIdentifier());
-				@SuppressWarnings("unchecked")
-				ArrayList<StoredFileIndex> fileIndex = (ArrayList<StoredFileIndex>) storedIndex
+				StoredFileIndexList fileIndex = (StoredFileIndexList) storedIndex
 						.getContent(getContext().getLocalNode().getAnonymous());
 				// remove old entries
 				Iterator<StoredFileIndex> itIndex = fileIndex.iterator();
@@ -265,7 +264,7 @@ public class FileService extends RESTService {
 				indexEnv = getContext().createUnencryptedEnvelope(storedIndex, fileIndex);
 			} catch (ArtifactNotFoundException e) {
 				logger.info("Index not found. Creating new one.");
-				ArrayList<StoredFileIndex> fileIndex = new ArrayList<>();
+				StoredFileIndexList fileIndex = new StoredFileIndexList();
 				fileIndex.add(indexEntry);
 				indexEnv = getContext().createUnencryptedEnvelope(getIndexIdentifier(), fileIndex);
 			}
@@ -783,24 +782,23 @@ public class FileService extends RESTService {
 	public ArrayList<Map<String, Object>> getFileIndex() throws AgentNotKnownException, StorageException,
 			CryptoException, L2pSecurityException, SerializationException {
 		ArrayList<Map<String, Object>> result = new ArrayList<>();
-		ArrayList<StoredFileIndex> fileIndex = getFileIndexReal();
+		StoredFileIndexList fileIndex = getFileIndexReal();
 		for (StoredFileIndex index : fileIndex) {
 			result.add(index.toMap());
 		}
 		return result;
 	}
 
-	private ArrayList<StoredFileIndex> getFileIndexReal() throws AgentNotKnownException, StorageException,
-			CryptoException, L2pSecurityException, SerializationException {
+	private StoredFileIndexList getFileIndexReal() throws AgentNotKnownException, StorageException, CryptoException,
+			L2pSecurityException, SerializationException {
 		try {
 			Envelope storedIndex = getContext().fetchEnvelope(getIndexIdentifier());
-			@SuppressWarnings("unchecked")
-			ArrayList<StoredFileIndex> indexList = (ArrayList<StoredFileIndex>) storedIndex
+			StoredFileIndexList indexList = (StoredFileIndexList) storedIndex
 					.getContent(getContext().getLocalNode().getAnonymous());
 			indexList.sort(StoredFileIndexComparator.INSTANCE);
 			return indexList;
 		} catch (ArtifactNotFoundException e) {
-			return new ArrayList<>();
+			return new StoredFileIndexList();
 		}
 	}
 
