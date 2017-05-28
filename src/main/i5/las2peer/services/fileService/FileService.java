@@ -216,8 +216,8 @@ public class FileService extends RESTService {
 				throw new IllegalArgumentException("Can not share with (" + shareWithGroup + "). Agent not found.");
 			}
 		}
-		return storeFileReal(owner, new StoredFile(identifier, filename, content, new Date().getTime(), owner.getId(),
-				mimeType, description), listFileOnIndex);
+		return storeFileReal(owner, new StoredFile(identifier, filename, content, new Date().getTime(),
+				Long.toString(owner.getId()), mimeType, description), listFileOnIndex);
 	}
 
 	private boolean storeFileReal(Agent owner, StoredFile file, boolean listFileOnIndex)
@@ -533,7 +533,7 @@ public class FileService extends RESTService {
 			responseBuilder.header(HttpHeaders.LAST_MODIFIED, RFC2822FMT.format(new Date(file.getLastModified())));
 			responseBuilder.header(HttpHeaders.CONTENT_TYPE, file.getMimeType());
 			// following some non HTTP standard header fields
-			responseBuilder.header(HEADER_OWNERID, Long.toString(file.getOwnerId()));
+			responseBuilder.header(HEADER_OWNERID, file.getOwnerId());
 			responseBuilder.header(HEADER_CONTENT_DESCRIPTION, file.getDescription());
 			return responseBuilder.build();
 		} catch (ArtifactNotFoundException e) {

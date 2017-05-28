@@ -9,18 +9,18 @@ import net.minidev.json.JSONObject;
 
 public class StoredFileIndex implements Serializable {
 
-	private static final long serialVersionUID = 1L;
+	private static final long serialVersionUID = 2L;
 
 	// data types optimized for serialization
 	private String identifier;
 	private String name;
 	private long lastModified;
 	private String mimeType;
-	private long ownerId;
+	private String ownerId;
 	private String description;
 	private long fileSize;
 
-	public StoredFileIndex(String identifier, String name, long lastModified, long ownerId, String mimeType,
+	public StoredFileIndex(String identifier, String name, long lastModified, String ownerId, String mimeType,
 			String description, long fileSize) throws NullPointerException, IllegalArgumentException {
 		// validate input
 		if (identifier == null) {
@@ -62,11 +62,11 @@ public class StoredFileIndex implements Serializable {
 		this.lastModified = lastModified;
 	}
 
-	public long getOwnerId() {
+	public String getOwnerId() {
 		return ownerId;
 	}
 
-	public void setOwnerId(long ownerId) {
+	public void setOwnerId(String ownerId) {
 		this.ownerId = ownerId;
 	}
 

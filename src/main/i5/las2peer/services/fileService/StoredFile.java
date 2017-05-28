@@ -8,12 +8,12 @@ import java.util.Map;
  */
 public class StoredFile extends StoredFileIndex {
 
-	private static final long serialVersionUID = 1L;
+	private static final long serialVersionUID = 2L;
 
 	private byte[] content;
 
-	public StoredFile(String identifier, String name, byte[] content, long lastModified, long ownerId, String mimeType,
-			String description) throws NullPointerException {
+	public StoredFile(String identifier, String name, byte[] content, long lastModified, String ownerId,
+			String mimeType, String description) throws NullPointerException {
 		super(identifier, name, lastModified, ownerId, mimeType, description, content != null ? content.length : 0);
 		if (content == null) {
 			throw new NullPointerException("content must not be null");
