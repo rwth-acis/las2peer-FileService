@@ -83,7 +83,7 @@ public class FileServiceTest {
 			Assert.assertEquals(TEST_NAME, map.get("name"));
 			Assert.assertArrayEquals(TEST_CONTENT, (byte[]) map.get("content"));
 			Assert.assertEquals(TEST_MIME, map.get("mimeType"));
-			Assert.assertEquals(userA.getId(), map.get("ownerId"));
+			Assert.assertEquals(Long.toString(userA.getId()), map.get("ownerId"));
 			Assert.assertEquals(TEST_DESCRIPTION, map.get("description"));
 		} catch (Exception e) {
 			e.printStackTrace();
@@ -128,7 +128,7 @@ public class FileServiceTest {
 			Assert.assertEquals(TEST_IDENTIFIER, map.get("identifier"));
 			Assert.assertEquals(TEST_NAME, map.get("name"));
 			Assert.assertEquals(TEST_MIME, map.get("mimeType"));
-			Assert.assertEquals(userA.getId(), map.get("ownerId"));
+			Assert.assertEquals(Long.toString(userA.getId()), map.get("ownerId"));
 			Assert.assertEquals(TEST_DESCRIPTION, map.get("description"));
 
 			// upload file again
@@ -198,7 +198,7 @@ public class FileServiceTest {
 			Assert.assertEquals(TEST_NAME, map.get("name"));
 			Assert.assertArrayEquals(TEST_CONTENT, (byte[]) map.get("content"));
 			Assert.assertEquals(TEST_MIME, map.get("mimeType"));
-			Assert.assertEquals(groupAB.getId(), map.get("ownerId"));
+			Assert.assertEquals(Long.toString(groupAB.getId()), map.get("ownerId"));
 			Assert.assertEquals(TEST_DESCRIPTION, map.get("description"));
 
 			// UserB changes the file and uploads its version
@@ -217,7 +217,7 @@ public class FileServiceTest {
 			Assert.assertEquals(TEST_NAME, map2.get("name"));
 			Assert.assertArrayEquals(TEST_CONTENT2, (byte[]) map2.get("content"));
 			Assert.assertEquals(TEST_MIME, map2.get("mimeType"));
-			Assert.assertEquals(groupAB.getId(), map2.get("ownerId"));
+			Assert.assertEquals(Long.toString(groupAB.getId()), map2.get("ownerId"));
 			Assert.assertEquals(TEST_DESCRIPTION, map2.get("description"));
 		} catch (Exception e) {
 			e.printStackTrace();
