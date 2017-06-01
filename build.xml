@@ -87,7 +87,7 @@
 		</copy>
 	</target>
 
-	<target name="compile_junit" depends="init_compile">
+	<target name="compile_junit" depends="compile_main">
 		<javac srcdir="${src.junit}" destdir="${tmp.junit}" classpath="${tmp.classes}:${lib.junit}" classpathref="libraries" debug="on" encoding="UTF-8" includeantruntime="false" />
 		<copy todir="${tmp.junit}">
 			<fileset dir="${src.junit}">
