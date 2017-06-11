@@ -18,3 +18,5 @@ ivy.jar
 *.secret
 *.jks
 /etc/las2peer.policy
+/etc/launcher-configuration.ini
+

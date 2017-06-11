@@ -5,6 +5,7 @@ import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
 import java.net.HttpURLConnection;
 import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
@@ -377,7 +378,7 @@ public class FileService extends RESTService {
 		 */
 		@POST
 		@Path("/")
-		@Produces(MediaType.TEXT_PLAIN)
+		@Produces(MediaType.APPLICATION_JSON)
 		@ApiResponses(
 				value = { @ApiResponse(
 						code = HttpURLConnection.HTTP_OK,
@@ -599,7 +600,8 @@ public class FileService extends RESTService {
 			}
 			byte[] filecontent = buffer.toByteArray();
 			// validate input
-			if (filecontent.length < 1) {
+			if (filecontent.length < 1
+					|| new String(filecontent, StandardCharsets.UTF_8).equalsIgnoreCase("undefined")) {
 				return Response.status(Status.BAD_REQUEST)
 						.entity("File (" + identifier
 								+ ") upload failed! No content provided. Add field 'filecontent' to your form.")
@@ -719,18 +721,11 @@ public class FileService extends RESTService {
 				sb.append("<tr><th colspan=\"7\"><hr></th></tr>\n");
 				for (StoredFileIndex index : service.getFileIndexReal()) {
 					sb.append("<tr>");
-					String clsURI = "";
-					ServicePath pathAnnotation = FileService.class.getAnnotation(ServicePath.class);
-					if (pathAnnotation == null) {
-						throw new RuntimeException("There should be a " + ServicePath.class.getCanonicalName()
-								+ " annotation for class '" + FileService.class.getCanonicalName() + "'");
-					}
-					clsURI = cleanSlashes(pathAnnotation.value());
-					String basename = cleanSlashes(RESOURCE_FILES_BASENAME);
+					String basename = cleanSlashes(RESOURCE_FILES_BASENAME).substring(1);
 					String identifier = cleanSlashes(index.getIdentifier());
-					sb.append("<td><a href=\"" + clsURI + basename + identifier + "\">" + identifier + "</a></td>");
-					String download = cleanSlashes(RESOURCE_DOWNLOAD_BASENAME);
-					sb.append("<td><a href=\"" + clsURI + download + identifier + "\">[&#8595;]</a></td>");
+					sb.append("<td><a href=\"" + basename + identifier + "\">" + identifier + "</a></td>");
+					String download = cleanSlashes(RESOURCE_DOWNLOAD_BASENAME).substring(1);
+					sb.append("<td><a href=\"" + download + identifier + "\">[&#8595;]</a></td>");
 					String strName = index.getName();
 					if (strName == null) {
 						strName = "";
