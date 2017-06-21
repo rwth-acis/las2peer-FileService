@@ -50,8 +50,8 @@ public class FileServiceTest {
 		try {
 			// create agents
 			System.out.println("creating agents...");
-			ServiceAgentImpl service = ServiceAgentImpl.createServiceAgent(
-					new ServiceNameVersion(FileService.class.getName(), "1.0"), "test-service-pass");
+			ServiceNameVersion nameVersion = new ServiceNameVersion(FileService.class.getName(), "1.0");
+			ServiceAgentImpl service = ServiceAgentImpl.createServiceAgent(nameVersion, "test-service-pass");
 			UserAgentImpl userA = UserAgentImpl.createUserAgent("test-pass-a");
 
 			// start service instance on node 0
@@ -68,14 +68,14 @@ public class FileServiceTest {
 
 			// UserA uploads a file to the network
 			System.out.println("uploading file");
-			mediatorA.invoke(FileService.class.getName(), "storeFile",
+			mediatorA.invoke(nameVersion, "storeFile",
 					new Serializable[] { TEST_IDENTIFIER, TEST_NAME, TEST_CONTENT, TEST_MIME, TEST_DESCRIPTION },
 					false);
 
 			// UserA downloads the file from the network
 			System.out.println("downloading file");
 			@SuppressWarnings("unchecked")
-			Map<String, Object> map = (Map<String, Object>) mediatorA.invoke(FileService.class.getName(), "fetchFile",
+			Map<String, Object> map = (Map<String, Object>) mediatorA.invoke(nameVersion, "fetchFile",
 					new Serializable[] { TEST_IDENTIFIER }, false);
 
 			// validate fetched file
@@ -96,8 +96,8 @@ public class FileServiceTest {
 		try {
 			// create agents
 			System.out.println("creating agents...");
-			ServiceAgentImpl service = ServiceAgentImpl.createServiceAgent(
-					new ServiceNameVersion(FileService.class.getName(), "1.0"), "test-service-pass");
+			ServiceNameVersion nameVersion = new ServiceNameVersion(FileService.class.getName(), "1.0");
+			ServiceAgentImpl service = ServiceAgentImpl.createServiceAgent(nameVersion, "test-service-pass");
 			UserAgentImpl userA = UserAgentImpl.createUserAgent("test-pass-a");
 
 			// start service instance on node 0
@@ -114,15 +114,15 @@ public class FileServiceTest {
 
 			// UserA uploads a file to the network
 			System.out.println("uploading file");
-			mediatorA.invoke(FileService.class.getName(), "storeFile",
+			mediatorA.invoke(nameVersion, "storeFile",
 					new Serializable[] { TEST_IDENTIFIER, TEST_NAME, TEST_CONTENT, TEST_MIME, TEST_DESCRIPTION },
 					false);
 
 			// get the file index and verify it
 			System.out.println("fetching file index");
 			@SuppressWarnings("unchecked")
-			ArrayList<Map<String, Object>> result = (ArrayList<Map<String, Object>>) mediatorA
-					.invoke(FileService.class.getName(), "getFileIndex", new Serializable[] {}, false);
+			ArrayList<Map<String, Object>> result = (ArrayList<Map<String, Object>>) mediatorA.invoke(nameVersion,
+					"getFileIndex", new Serializable[] {}, false);
 			Assert.assertTrue(result.size() == 1);
 			Map<String, Object> map = result.get(0);
 			Assert.assertEquals(TEST_IDENTIFIER, map.get("identifier"));
@@ -133,15 +133,15 @@ public class FileServiceTest {
 
 			// upload file again
 			System.out.println("uploading file");
-			mediatorA.invoke(FileService.class.getName(), "storeFile",
+			mediatorA.invoke(nameVersion, "storeFile",
 					new Serializable[] { TEST_IDENTIFIER, TEST_NAME, TEST_CONTENT, TEST_MIME, TEST_DESCRIPTION },
 					false);
 
 			// verify: no duplicate index entry
 			System.out.println("fetching file index");
 			@SuppressWarnings("unchecked")
-			ArrayList<Map<String, Object>> result2 = (ArrayList<Map<String, Object>>) mediatorA
-					.invoke(FileService.class.getName(), "getFileIndex", new Serializable[] {}, false);
+			ArrayList<Map<String, Object>> result2 = (ArrayList<Map<String, Object>>) mediatorA.invoke(nameVersion,
+					"getFileIndex", new Serializable[] {}, false);
 			Assert.assertTrue(result2.size() == 1);
 		} catch (Exception e) {
 			e.printStackTrace();
@@ -154,8 +154,8 @@ public class FileServiceTest {
 		try {
 			// create agents
 			System.out.println("creating agents...");
-			ServiceAgentImpl service = ServiceAgentImpl.createServiceAgent(
-					new ServiceNameVersion(FileService.class.getName(), "1.0"), "test-service-pass");
+			ServiceNameVersion nameVersion = new ServiceNameVersion(FileService.class.getName(), "1.0");
+			ServiceAgentImpl service = ServiceAgentImpl.createServiceAgent(nameVersion, "test-service-pass");
 			UserAgentImpl userA = UserAgentImpl.createUserAgent("test-pass-a");
 			UserAgentImpl userB = UserAgentImpl.createUserAgent("test-pass-b");
 			GroupAgentImpl groupAB = GroupAgentImpl.createGroupAgent(new Agent[] { userA, userB });
@@ -184,13 +184,13 @@ public class FileServiceTest {
 
 			// UserA uploads a file to the network and shares it with groupAB
 			System.out.println("uploading file");
-			mediatorA.invoke(FileService.class.getName(), "storeFile", new Serializable[] { TEST_IDENTIFIER, TEST_NAME,
-					TEST_CONTENT, TEST_MIME, groupAB.getIdentifier(), TEST_DESCRIPTION }, false);
+			mediatorA.invoke(nameVersion, "storeFile", new Serializable[] { TEST_IDENTIFIER, TEST_NAME, TEST_CONTENT,
+					TEST_MIME, groupAB.getIdentifier(), TEST_DESCRIPTION }, false);
 
 			// UserB downloads the file from the network
 			System.out.println("downloading file");
 			@SuppressWarnings("unchecked")
-			Map<String, Object> map = (Map<String, Object>) mediatorB.invoke(FileService.class.getName(), "fetchFile",
+			Map<String, Object> map = (Map<String, Object>) mediatorB.invoke(nameVersion, "fetchFile",
 					new Serializable[] { TEST_IDENTIFIER }, false);
 
 			// validate fetched file
@@ -203,13 +203,13 @@ public class FileServiceTest {
 
 			// UserB changes the file and uploads its version
 			System.out.println("User B updating file");
-			mediatorA.invoke(FileService.class.getName(), "storeFile", new Serializable[] { TEST_IDENTIFIER, TEST_NAME,
-					TEST_CONTENT2, TEST_MIME, groupAB.getIdentifier(), TEST_DESCRIPTION }, false);
+			mediatorA.invoke(nameVersion, "storeFile", new Serializable[] { TEST_IDENTIFIER, TEST_NAME, TEST_CONTENT2,
+					TEST_MIME, groupAB.getIdentifier(), TEST_DESCRIPTION }, false);
 
 			// UserA fetches the file again and reads changes from User B
 			System.out.println("downloading changed file");
 			@SuppressWarnings("unchecked")
-			Map<String, Object> map2 = (Map<String, Object>) mediatorB.invoke(FileService.class.getName(), "fetchFile",
+			Map<String, Object> map2 = (Map<String, Object>) mediatorB.invoke(nameVersion, "fetchFile",
 					new Serializable[] { TEST_IDENTIFIER }, false);
 
 			// validate fetched file
