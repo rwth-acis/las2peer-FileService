@@ -10,9 +10,11 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.logging.Level;
 
+import javax.ws.rs.BadRequestException;
 import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
@@ -22,6 +24,7 @@ import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.PathSegment;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.ResponseBuilder;
 import javax.ws.rs.core.Response.Status;
@@ -30,7 +33,6 @@ import org.apache.commons.lang3.StringEscapeUtils;
 import org.glassfish.jersey.media.multipart.FormDataBodyPart;
 import org.glassfish.jersey.media.multipart.FormDataContentDisposition;
 import org.glassfish.jersey.media.multipart.FormDataParam;
-import org.glassfish.jersey.media.multipart.MultiPartFeature;
 
 import i5.las2peer.api.Context;
 import i5.las2peer.api.ServiceException;
@@ -97,7 +99,6 @@ public class FileService extends RESTService {
 
 	@Override
 	protected void initResources() {
-		getResourceConfig().register(MultiPartFeature.class);
 		getResourceConfig().register(ResourceFiles.class);
 		getResourceConfig().register(ResourceDownload.class);
 		getResourceConfig().register(ResourceIndex.class);
@@ -279,7 +280,7 @@ public class FileService extends RESTService {
 	}
 
 	@Api(
-			value = "files")
+			tags = { "files" })
 	@SwaggerDefinition(
 			info = @Info(
 					title = "las2peer File Service",
@@ -308,55 +309,24 @@ public class FileService extends RESTService {
 			return Response.status(Status.NOT_IMPLEMENTED).build();
 		}
 
-		@GET
-		@Path("/{subfolder1}/{subfolder2}/{subfolder3}/{subfolder4}/{subfolder5}/{identifier}")
-		public Response getFile(@PathParam("subfolder1") String subfolder1, @PathParam("subfolder2") String subfolder2,
-				@PathParam("subfolder3") String subfolder3, @PathParam("subfolder4") String subfolder4,
-				@PathParam("subfolder5") String subfolder5, @PathParam("identifier") String identifier) {
-			return getFile(subfolder1 + "/" + subfolder2 + "/" + subfolder3 + "/" + subfolder4 + "/" + subfolder5 + "/"
-					+ identifier);
-		}
-
-		@GET
-		@Path("/{subfolder1}/{subfolder2}/{subfolder3}/{subfolder4}/{identifier}")
-		public Response getFile(@PathParam("subfolder1") String subfolder1, @PathParam("subfolder2") String subfolder2,
-				@PathParam("subfolder3") String subfolder3, @PathParam("subfolder4") String subfolder4,
-				@PathParam("identifier") String identifier) {
-			return getFile(subfolder1 + "/" + subfolder2 + "/" + subfolder3 + "/" + subfolder4 + "/" + identifier);
-		}
-
-		@GET
-		@Path("/{subfolder1}/{subfolder2}/{subfolder3}/{identifier}")
-		public Response getFile(@PathParam("subfolder1") String subfolder1, @PathParam("subfolder2") String subfolder2,
-				@PathParam("subfolder3") String subfolder3, @PathParam("identifier") String identifier) {
-			return getFile(subfolder1 + "/" + subfolder2 + "/" + subfolder3 + "/" + identifier);
-		}
-
-		@GET
-		@Path("/{subfolder1}/{subfolder2}/{identifier}")
-		public Response getFile(@PathParam("subfolder1") String subfolder1, @PathParam("subfolder2") String subfolder2,
-				@PathParam("identifier") String identifier) {
-			return getFile(subfolder1 + "/" + subfolder2 + "/" + identifier);
-		}
-
-		@GET
-		@Path("/{subfolder1}/{identifier}")
-		public Response getFile(@PathParam("subfolder1") String subfolder1,
-				@PathParam("identifier") String identifier) {
-			return getFile(subfolder1 + "/" + identifier);
-		}
-
 		/**
 		 * This web API method downloads a file from the las2peer network. The file content is returned as binary
 		 * content.
 		 * 
-		 * @param identifier A unique name or hash value to identify the file.
+		 * @param paths A list path segments or at least a single identifier to identify the file.
 		 * @return Returns the file content as inline element for website integration or an error response if an error
 		 *         occurred.
 		 */
 		@GET
-		@Path("/{identifier}")
-		public Response getFile(@PathParam("identifier") String identifier) {
+		@Path("/{paths: .+}")
+		public Response getFile(@PathParam("paths") List<PathSegment> paths) {
+			if (paths.size() < 1) {
+				throw new BadRequestException("No file identifier given");
+			}
+			String identifier = "";
+			for (PathSegment seg : paths) {
+				identifier = String.join("/", identifier, seg.getPath());
+			}
 			FileService service = (FileService) Context.getCurrent().getService();
 			return service.getFile(identifier, false);
 		}
@@ -377,7 +347,6 @@ public class FileService extends RESTService {
 		 * @return Returns an HTTP status code and message with the result of the upload request.
 		 */
 		@POST
-		@Path("/")
 		@Produces(MediaType.APPLICATION_JSON)
 		@ApiResponses(
 				value = { @ApiResponse(
@@ -420,7 +389,6 @@ public class FileService extends RESTService {
 		 * @return Returns an HTTP status code and message with the result of the upload request.
 		 */
 		@PUT
-		@Path("/")
 		@Produces(MediaType.TEXT_PLAIN)
 		@ApiResponses(
 				value = { @ApiResponse(
@@ -451,7 +419,7 @@ public class FileService extends RESTService {
 	}
 
 	@Api(
-			value = "download")
+			tags = { "download" })
 	@SwaggerDefinition(
 			info = @Info(
 					title = "las2peer File Service",
@@ -467,56 +435,23 @@ public class FileService extends RESTService {
 	@Path(RESOURCE_DOWNLOAD_BASENAME)
 	public static class ResourceDownload {
 
-		@GET
-		@Path("/{subfolder1}/{subfolder2}/{subfolder3}/{subfolder4}/{subfolder5}/{identifier}")
-		public Response downloadFile(@PathParam("subfolder1") String subfolder1,
-				@PathParam("subfolder2") String subfolder2, @PathParam("subfolder3") String subfolder3,
-				@PathParam("subfolder4") String subfolder4, @PathParam("subfolder5") String subfolder5,
-				@PathParam("identifier") String identifier) {
-			return downloadFile(subfolder1 + "/" + subfolder2 + "/" + subfolder3 + "/" + subfolder4 + "/" + subfolder5
-					+ "/" + identifier);
-		}
-
-		@GET
-		@Path("/{subfolder1}/{subfolder2}/{subfolder3}/{subfolder4}/{identifier}")
-		public Response downloadFile(@PathParam("subfolder1") String subfolder1,
-				@PathParam("subfolder2") String subfolder2, @PathParam("subfolder3") String subfolder3,
-				@PathParam("subfolder4") String subfolder4, @PathParam("identifier") String identifier) {
-			return downloadFile(subfolder1 + "/" + subfolder2 + "/" + subfolder3 + "/" + subfolder4 + "/" + identifier);
-		}
-
-		@GET
-		@Path("/{subfolder1}/{subfolder2}/{subfolder3}/{identifier}")
-		public Response downloadFile(@PathParam("subfolder1") String subfolder1,
-				@PathParam("subfolder2") String subfolder2, @PathParam("subfolder3") String subfolder3,
-				@PathParam("identifier") String identifier) {
-			return downloadFile(subfolder1 + "/" + subfolder2 + "/" + subfolder3 + "/" + identifier);
-		}
-
-		@GET
-		@Path("/{subfolder1}/{subfolder2}/{identifier}")
-		public Response downloadFile(@PathParam("subfolder1") String subfolder1,
-				@PathParam("subfolder2") String subfolder2, @PathParam("identifier") String identifier) {
-			return downloadFile(subfolder1 + "/" + subfolder2 + "/" + identifier);
-		}
-
-		@GET
-		@Path("/{subfolder1}/{identifier}")
-		public Response downloadFile(@PathParam("subfolder1") String subfolder1,
-				@PathParam("identifier") String identifier) {
-			return downloadFile(subfolder1 + "/" + identifier);
-		}
-
 		/**
 		 * This web API method downloads a file from the las2peer network. The file content is returned as binary
 		 * content.
 		 * 
-		 * @param identifier A unique name or hash value to identify the file.
+		 * @param paths A list path segments or at least a single identifier to identify the file.
 		 * @return Returns the file content or an error response if an error occurred.
 		 */
 		@GET
-		@Path("/{identifier}")
-		public Response downloadFile(@PathParam("identifier") String identifier) {
+		@Path(RESOURCE_DOWNLOAD_BASENAME + "/{paths: .+}")
+		public Response downloadFile(@PathParam("identifier") List<PathSegment> paths) {
+			if (paths.size() < 1) {
+				throw new BadRequestException("No file identifier given");
+			}
+			String identifier = "";
+			for (PathSegment seg : paths) {
+				identifier = String.join("/", identifier, seg.getPath());
+			}
 			FileService service = (FileService) Context.getCurrent().getService();
 			return service.getFile(identifier, true);
 		}
@@ -663,7 +598,7 @@ public class FileService extends RESTService {
 	}
 
 	@Api(
-			value = "index")
+			tags = { "index" })
 	@SwaggerDefinition(
 			info = @Info(
 					title = "las2peer File Service",
@@ -676,7 +611,7 @@ public class FileService extends RESTService {
 					license = @License(
 							name = "ACIS License (BSD3)",
 							url = "https://github.com/rwth-acis/las2peer-FileService/blob/master/LICENSE")))
-	@Path("/")
+	@Path("")
 	public static class ResourceIndex {
 
 		@GET
