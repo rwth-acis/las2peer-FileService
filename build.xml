@@ -4,7 +4,7 @@
 
 	<property name="service.name" value="i5.las2peer.services.fileService" />
 	<property name="service.class" value="FileService" />
-	<property name="service.version" value="2.1.3" />
+	<property name="service.version" value="2.1.4" />
 
 	<property name="src.main" location="src/main" />
 	<property name="src.junit" location="src/test" />

@@ -729,7 +729,7 @@ public class FileService extends RESTService {
 	private StoredFileIndexList getFileIndexReal()
 			throws EnvelopeAccessDeniedException, EnvelopeOperationFailedException, ServiceException {
 		try {
-			Envelope storedIndex = Context.get().requestEnvelope(getIndexIdentifier());
+			Envelope storedIndex = Context.get().requestEnvelope(getIndexIdentifier(), getAgent());
 			StoredFileIndexList indexList = (StoredFileIndexList) storedIndex.getContent();
 			indexList.sort(StoredFileIndexComparator.INSTANCE);
 			return indexList;
