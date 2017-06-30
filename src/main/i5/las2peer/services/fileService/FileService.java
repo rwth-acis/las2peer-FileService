@@ -265,7 +265,7 @@ public class FileService extends RESTService {
 				}
 			} catch (EnvelopeNotFoundException e) {
 				logger.info("Index not found. Creating new one.");
-				indexEnv = Context.get().createEnvelope(getIndexIdentifier());
+				indexEnv = Context.get().createEnvelope(getIndexIdentifier(), getAgent());
 				fileIndex = new StoredFileIndexList();
 			}
 			// update file index
