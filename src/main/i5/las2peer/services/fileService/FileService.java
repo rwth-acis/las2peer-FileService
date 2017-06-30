@@ -89,7 +89,7 @@ public class FileService extends RESTService {
 	private static final SimpleDateFormat RFC2822FMT = new SimpleDateFormat("EEE, dd MMM yyyy HH:mm:ss Z (zzz)");
 	private static final String RESOURCE_FILES_BASENAME = "/files";
 	private static final String RESOURCE_DOWNLOAD_BASENAME = "/download";
-	private static final String INDEX_IDENTIFIER_SUFFIX = "-index";
+	private static final String INDEX_IDENTIFIER_PREFIX = "index-";
 	private static final String RESOURCE_INDEX_JSON = "/index.json";
 	private static final String RESOURCE_INDEX_HTML = "/index.html";
 	private static final SimpleDateFormat HTML_DATE_FMT = new SimpleDateFormat("yyyy-MM-dd HH:mm");
@@ -266,7 +266,6 @@ public class FileService extends RESTService {
 			} catch (EnvelopeNotFoundException e) {
 				logger.info("Index not found. Creating new one.");
 				indexEnv = Context.get().createEnvelope(getIndexIdentifier());
-				indexEnv.setPublic();
 				fileIndex = new StoredFileIndexList();
 			}
 			// update file index
@@ -740,7 +739,7 @@ public class FileService extends RESTService {
 	}
 
 	private String getIndexIdentifier() throws ServiceException {
-		return getAgent().getServiceNameVersion().toString() + INDEX_IDENTIFIER_SUFFIX;
+		return INDEX_IDENTIFIER_PREFIX + getAgent().getIdentifier();
 	}
 
 }
