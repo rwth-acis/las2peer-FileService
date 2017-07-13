@@ -13,6 +13,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.logging.Level;
+import java.util.stream.Collectors;
 
 import javax.ws.rs.BadRequestException;
 import javax.ws.rs.DELETE;
@@ -242,6 +243,7 @@ public class FileService extends RESTService {
 			created = true;
 		}
 		// update envelope content
+		fileEnv.setPublic();
 		fileEnv.setContent(file);
 		// store envelope with file content
 		Context.get().storeEnvelope(fileEnv, owner);
@@ -253,7 +255,7 @@ public class FileService extends RESTService {
 			Envelope indexEnv;
 			StoredFileIndexList fileIndex;
 			try {
-				indexEnv = Context.get().requestEnvelope(getIndexIdentifier());
+				indexEnv = Context.get().requestEnvelope(getIndexIdentifier(), getAgent());
 				fileIndex = (StoredFileIndexList) indexEnv.getContent();
 				// remove old entries
 				Iterator<StoredFileIndex> itIndex = fileIndex.iterator();
@@ -322,10 +324,7 @@ public class FileService extends RESTService {
 			if (paths.size() < 1) {
 				throw new BadRequestException("No file identifier given");
 			}
-			String identifier = "";
-			for (PathSegment seg : paths) {
-				identifier = String.join("/", identifier, seg.getPath());
-			}
+			String identifier = paths.stream().map(PathSegment::getPath).collect(Collectors.joining("/"));
 			FileService service = (FileService) Context.getCurrent().getService();
 			return service.getFile(identifier, false);
 		}
