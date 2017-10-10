@@ -440,15 +440,12 @@ public class FileService extends RESTService {
 		 */
 		@GET
 		@Path(RESOURCE_DOWNLOAD_BASENAME + "/{paths: .+}")
-		public Response downloadFile(@PathParam("identifier") List<PathSegment> paths) {
+		public Response downloadFile(@PathParam("paths") List<PathSegment> paths) {
 			if (paths.size() < 1) {
 				throw new BadRequestException("No file identifier given");
 			}
-			String identifier = "";
-			for (PathSegment seg : paths) {
-				identifier = String.join("/", identifier, seg.getPath());
-			}
 			FileService service = (FileService) Context.getCurrent().getService();
+			String identifier = String.join("/", service.getCleanPaths(paths));
 			return service.downloadFile(identifier);
 		}
 
