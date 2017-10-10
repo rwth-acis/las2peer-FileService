@@ -13,7 +13,6 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.logging.Level;
-import java.util.stream.Collectors;
 
 import javax.ws.rs.BadRequestException;
 import javax.ws.rs.DELETE;
@@ -31,7 +30,6 @@ import javax.ws.rs.core.Response.ResponseBuilder;
 import javax.ws.rs.core.Response.Status;
 
 import org.apache.commons.lang3.StringEscapeUtils;
-import org.apache.commons.lang3.StringUtils;
 import org.glassfish.jersey.media.multipart.FormDataBodyPart;
 import org.glassfish.jersey.media.multipart.FormDataContentDisposition;
 import org.glassfish.jersey.media.multipart.FormDataParam;
@@ -325,10 +323,8 @@ public class FileService extends RESTService {
 			if (paths.size() < 1) {
 				throw new BadRequestException("No file identifier given");
 			}
-			String identifier = paths.stream().map(PathSegment::getPath).filter(StringUtils::isNotBlank)
-					.collect(Collectors.joining("/"));
 			FileService service = (FileService) Context.getCurrent().getService();
-			return service.getFile(identifier, false);
+			return service.getFile(service.getCleanPaths(paths));
 		}
 
 		/**
@@ -453,22 +449,18 @@ public class FileService extends RESTService {
 				identifier = String.join("/", identifier, seg.getPath());
 			}
 			FileService service = (FileService) Context.getCurrent().getService();
-			return service.getFile(identifier, true);
+			return service.downloadFile(identifier);
 		}
 
 	}
 
-	private Response getFile(String identifier, boolean attachment) {
+	private Response downloadFile(String identifier) {
 		try {
 			StoredFile file = fetchFileReal(identifier);
 			// set binary file content as response body
 			ResponseBuilder responseBuilder = Response.ok(file.getContent());
 			// set headers
-			String disposition = "inline";
-			if (attachment) {
-				disposition = "attachment";
-			}
-			responseBuilder.header(HttpHeaders.CONTENT_DISPOSITION, disposition + escapeFilename(file.getName()));
+			responseBuilder.header(HttpHeaders.CONTENT_DISPOSITION, "attachment" + escapeFilename(file.getName()));
 			responseBuilder.header(HttpHeaders.LAST_MODIFIED, RFC2822FMT.format(new Date(file.getLastModified())));
 			responseBuilder.header(HttpHeaders.CONTENT_TYPE, file.getMimeType());
 			// following some non HTTP standard header fields
@@ -483,6 +475,47 @@ public class FileService extends RESTService {
 			return Response.status(Status.FORBIDDEN).entity(e.toString()).build();
 		} catch (Exception e) {
 			logger.log(Level.SEVERE, "Can't read file (" + identifier + ") content from network storage! ", e);
+			return Response.status(Status.INTERNAL_SERVER_ERROR).build();
+		}
+	}
+
+	private Response getFile(List<String> cleanPaths) {
+		String originalIdentifier = String.join("/", cleanPaths);
+		try {
+			StoredFile file = null;
+			ArrayList<String> checkPaths = new ArrayList<>(cleanPaths);
+			try {
+				file = fetchFileReal(originalIdentifier);
+			} catch (EnvelopeNotFoundException e) {
+				while (!checkPaths.isEmpty()) {
+					String identifier = String.join("/", checkPaths);
+					try {
+						file = fetchFileReal(identifier + "/index.html");
+						break;
+					} catch (Exception e2) {
+						checkPaths.remove(checkPaths.size() - 1);
+					}
+				}
+			}
+			if (file == null) {
+				logger.log(Level.INFO, "File (" + originalIdentifier + ") not found!");
+				return Response.status(Status.NOT_FOUND).build();
+			}
+			// set binary file content as response body
+			ResponseBuilder responseBuilder = Response.ok(file.getContent());
+			// set headers
+			responseBuilder.header(HttpHeaders.CONTENT_DISPOSITION, "inline" + escapeFilename(file.getName()));
+			responseBuilder.header(HttpHeaders.LAST_MODIFIED, RFC2822FMT.format(new Date(file.getLastModified())));
+			responseBuilder.header(HttpHeaders.CONTENT_TYPE, file.getMimeType());
+			// following some non HTTP standard header fields
+			responseBuilder.header(HEADER_OWNERID, file.getOwnerId());
+			responseBuilder.header(HEADER_CONTENT_DESCRIPTION, file.getDescription());
+			return responseBuilder.build();
+		} catch (EnvelopeAccessDeniedException e) {
+			logger.log(Level.INFO, e.toString(), e);
+			return Response.status(Status.FORBIDDEN).entity(e.toString()).build();
+		} catch (Exception e) {
+			logger.log(Level.SEVERE, "Can't read file (" + originalIdentifier + ") content from network storage! ", e);
 			return Response.status(Status.INTERNAL_SERVER_ERROR).build();
 		}
 	}
@@ -741,6 +774,19 @@ public class FileService extends RESTService {
 
 	private String getIndexIdentifier() throws ServiceException {
 		return INDEX_IDENTIFIER_PREFIX + getAgent().getIdentifier();
+	}
+
+	private List<String> getCleanPaths(List<PathSegment> paths) {
+		List<String> cleanPaths = new ArrayList<>();
+		for (PathSegment seg : paths) {
+			if (seg != null) {
+				String path = seg.getPath();
+				if (path != null && !path.isEmpty()) {
+					cleanPaths.add(path);
+				}
+			}
+		}
+		return cleanPaths;
 	}
 
 }
