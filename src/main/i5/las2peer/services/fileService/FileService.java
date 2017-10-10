@@ -31,6 +31,7 @@ import javax.ws.rs.core.Response.ResponseBuilder;
 import javax.ws.rs.core.Response.Status;
 
 import org.apache.commons.lang3.StringEscapeUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.glassfish.jersey.media.multipart.FormDataBodyPart;
 import org.glassfish.jersey.media.multipart.FormDataContentDisposition;
 import org.glassfish.jersey.media.multipart.FormDataParam;
@@ -324,7 +325,8 @@ public class FileService extends RESTService {
 			if (paths.size() < 1) {
 				throw new BadRequestException("No file identifier given");
 			}
-			String identifier = paths.stream().map(PathSegment::getPath).collect(Collectors.joining("/"));
+			String identifier = paths.stream().map(PathSegment::getPath).filter(StringUtils::isNotBlank)
+					.collect(Collectors.joining("/"));
 			FileService service = (FileService) Context.getCurrent().getService();
 			return service.getFile(identifier, false);
 		}
