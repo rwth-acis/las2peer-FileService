@@ -96,7 +96,7 @@ public class FileService extends RESTService {
 	private static final SimpleDateFormat HTML_DATE_FMT = new SimpleDateFormat("yyyy-MM-dd HH:mm");
 
 	// configurable properties
-	public static final long MAX_FILE_SIZE_MB = 5; // MegaByte
+	public static final long MAX_FILE_SIZE_MB = 10; // MegaByte
 
 	@Override
 	protected void initResources() {
