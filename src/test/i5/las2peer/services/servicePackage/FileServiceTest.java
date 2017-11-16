@@ -50,7 +50,8 @@ public class FileServiceTest {
 		try {
 			// create agents
 			System.out.println("creating agents...");
-			ServiceNameVersion nameVersion = new ServiceNameVersion(FileService.class.getName(), "1.0");
+			ServiceNameVersion nameVersion = new ServiceNameVersion(FileService.class.getName(),
+					FileService.API_VERSION);
 			ServiceAgentImpl service = ServiceAgentImpl.createServiceAgent(nameVersion, "test-service-pass");
 			UserAgentImpl userA = UserAgentImpl.createUserAgent("test-pass-a");
 
@@ -96,7 +97,8 @@ public class FileServiceTest {
 		try {
 			// create agents
 			System.out.println("creating agents...");
-			ServiceNameVersion nameVersion = new ServiceNameVersion(FileService.class.getName(), "1.0");
+			ServiceNameVersion nameVersion = new ServiceNameVersion(FileService.class.getName(),
+					FileService.API_VERSION);
 			ServiceAgentImpl service = ServiceAgentImpl.createServiceAgent(nameVersion, "test-service-pass");
 			UserAgentImpl userA = UserAgentImpl.createUserAgent("test-pass-a");
 
@@ -154,7 +156,8 @@ public class FileServiceTest {
 		try {
 			// create agents
 			System.out.println("creating agents...");
-			ServiceNameVersion nameVersion = new ServiceNameVersion(FileService.class.getName(), "1.0");
+			ServiceNameVersion nameVersion = new ServiceNameVersion(FileService.class.getName(),
+					FileService.API_VERSION);
 			ServiceAgentImpl service = ServiceAgentImpl.createServiceAgent(nameVersion, "test-service-pass");
 			UserAgentImpl userA = UserAgentImpl.createUserAgent("test-pass-a");
 			UserAgentImpl userB = UserAgentImpl.createUserAgent("test-pass-b");
