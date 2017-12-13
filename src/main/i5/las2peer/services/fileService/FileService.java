@@ -343,7 +343,7 @@ public class FileService extends RESTService {
 		 * @return Returns an HTTP status code and message with the result of the upload request.
 		 */
 		@POST
-		@Produces(MediaType.APPLICATION_JSON)
+		@Produces(MediaType.TEXT_PLAIN)
 		@ApiResponses(
 				value = { @ApiResponse(
 						code = HttpURLConnection.HTTP_OK,
