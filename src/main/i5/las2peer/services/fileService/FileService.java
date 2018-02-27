@@ -46,6 +46,7 @@ import i5.las2peer.api.security.AgentNotFoundException;
 import i5.las2peer.api.security.AgentOperationFailedException;
 import i5.las2peer.api.security.GroupAgent;
 import i5.las2peer.logging.L2pLogger;
+import i5.las2peer.connectors.webConnector.util.MimeTypes;
 import i5.las2peer.restMapper.RESTService;
 import i5.las2peer.restMapper.annotations.ServicePath;
 import i5.las2peer.services.fileService.StoredFileIndex.StoredFileIndexComparator;
@@ -543,8 +544,10 @@ public class FileService extends RESTService {
 			if (fileContentHeader != null) {
 				filename = fileContentHeader.getFileName();
 			}
-			String mimeType = null;
-			if (bodyPart != null) {
+			
+			// infer MIME type
+			String mimeType = MimeTypes.get(identifier);
+			if (mimeType == MimeTypes.DEFAULT && bodyPart != null) {
 				MediaType type = bodyPart.getMediaType();
 				if (type != null) {
 					mimeType = type.toString();
