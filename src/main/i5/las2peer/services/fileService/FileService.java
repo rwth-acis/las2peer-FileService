@@ -544,7 +544,10 @@ public class FileService extends RESTService {
 			if (fileContentHeader != null) {
 				filename = fileContentHeader.getFileName();
 			}
-			
+			if(identifier == null){
+				identifier = filename;
+			}
+
 			// infer MIME type
 			String mimeType = MimeTypes.get(identifier);
 			if (mimeType == MimeTypes.DEFAULT && bodyPart != null) {

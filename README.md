@@ -52,3 +52,58 @@ To provide a file download link, e.g. for attachments, just add:
 
 ### How to build this service:
 See: https://github.com/rwth-acis/las2peer-Template-Project
+
+### How to run using Docker
+
+First build the image:
+```bash
+docker build . -t file-service
+```
+
+Then you can run the image like this:
+
+```bash
+docker run -p 8080:8080 -p 9011:9011 file-service
+```
+
+The REST-API will be available via *http://localhost:8080/fileservice/files* and the las2peer node is available via port 9011.
+
+In order to customize your setup you can set further environment variables.
+
+#### Node Launcher Variables
+
+Set [las2peer node launcher options](https://github.com/rwth-acis/las2peer-Template-Project/wiki/L2pNodeLauncher-Commands#at-start-up) with these variables.
+The las2peer port is fixed at *9011*.
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| BOOTSTRAP | unset | Set the --bootstrap option to bootrap with existing nodes. The container will wait for any bootstrap node to be available before continuing. |
+| SERVICE_PASSPHRASE | Passphrase | Set the second argument in *startService('<service@version>', '<SERVICE_PASSPHRASE>')*. |
+
+#### Other Variables
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| DEBUG  | unset | Set to any value to get verbose output in the container entrypoint script. |
+
+#### Custom Node Startup
+
+If the variables are not sufficient for your setup you can customize how the node is started via arguments after the image name.
+In this example we start the node in interactive mode:
+```bash
+docker run -it -e MYSQL_USER=myuser -e MYSQL_PASSWORD=mypasswd activity-tracker startService\(\'i5.las2peer.services.fileService.FileService@2.2.5\', \'Passphrase\'\) startWebConnector interactive
+```
+Inside the container arguments are placed right behind the launch node command:
+```bash
+java -cp lib/* i5.las2peer.tools.L2pNodeLauncher -s service -p ${LAS2PEER_PORT} <your args>
+```
+
+#### Volumes
+
+The following places should be persisted in volumes in productive scenarios:
+
+| Path | Description |
+|------|-------------|
+| /src/node-storage | Pastry P2P storage. |
+| /src/etc/startup | Service agent key pair and passphrase. |
+| /src/log | Log files. |
