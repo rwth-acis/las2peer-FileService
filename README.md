@@ -1,4 +1,15 @@
-# las2peer-FileService
+<p align="center">
+  <img src="https://raw.githubusercontent.com/rwth-acis/las2peer/master/img/logo/bitmap/las2peer-logo-128x128.png" />
+</p>
+<h1 align="center">las2peer-Contact-Service</h1>
+<p align="center">
+  <a href="https://travis-ci.org/rwth-acis/las2peer-Contact-Service" alt="Travis Build Status">
+        <img src="https://travis-ci.org/rwth-acis/las2peer-Contact-Service.svg?branch=master" /></a>
+  <a href="https://codecov.io/gh/rwth-acis/las2peer-Contact-Service" alt="Code Coverage">
+        <img src="https://codecov.io/gh/rwth-acis/las2peer-Contact-Service/branch/master/graph/badge.svg" /></a>
+  <a href="https://libraries.io/github/rwth-acis/las2peer-contact-service" alt="Dependencies">
+        <img src="https://img.shields.io/librariesio/github/rwth-acis/las2peer-Contact-Service" /></a>
+</p>
 
 This is a las2peer file service. It provides methods to fetch and store binary data (files) in the las2peer network.
 Furthermore it supports some kind of metadata for each file. Currently it supports the following metadata:
@@ -21,41 +32,46 @@ Furthermore the service sets the following non HTTP standard headers:
 - "ownerid: [agent id of the owner]"
 - "Content-Description: [textual content description as set in metadata]"
 
-### How can I integrate the upload function into my web frontend?
+## How can I integrate the upload function into my web frontend
 
 Just add or adapt the following form to your web frontend. Please note that **filecontent** is mandatory!
+
 ```html
 <html>
-	<form method="POST" enctype="multipart/form-data" action="http://localhost:14580/fileservice/files">
-		File to upload: <input type="file" name="filecontent" value=""><br/>
-		Identifier (unique): <input type="text" name="identifier"><br/>
-		Description: <input type="text" name="description"><br/>
-		<br/>
-		<input type="submit" value="Press"> to upload the file!
-	</form>
+ <form method="POST" enctype="multipart/form-data" action="http://localhost:14580/fileservice/files">
+  File to upload: <input type="file" name="filecontent" value=""><br/>
+ Identifier (unique): <input type="text" name="identifier"><br/>
+  Description: <input type="text" name="description"><br/>
+  <br/>
+  <input type="submit" value="Press"> to upload the file!
+ </form>
 </html>
 ```
 
-### How can I use uploaded files?
+## How can I use uploaded files
 
 Each file has its unique identifier and the service provides two urls to get or download the file.
 
 To get the file like a logo image for your website just add:
+
 ```html
 <img src="http://localhost:14580/fileservice/files/[your logo image identifier]">
 ```
 
 To provide a file download link, e.g. for attachments, just add:
+
 ```html
 <a href="http://localhost:14580/fileservice/download/[your logo image identifier]">Download</a>
 ```
 
-### How to build this service:
-See: https://github.com/rwth-acis/las2peer-Template-Project
+## How to build this service
+
+See: <https://github.com/rwth-acis/las2peer-Template-Project>
 
 ### How to run using Docker
 
 First build the image:
+
 ```bash
 docker build . -t file-service
 ```
@@ -91,10 +107,13 @@ The las2peer port is fixed at *9011*.
 
 If the variables are not sufficient for your setup you can customize how the node is started via arguments after the image name.
 In this example we start the node in interactive mode:
+
 ```bash
 docker run -it -e MYSQL_USER=myuser -e MYSQL_PASSWORD=mypasswd activity-tracker startService\(\'i5.las2peer.services.fileService.FileService@2.2.5\', \'Passphrase\'\) startWebConnector interactive
 ```
+
 Inside the container arguments are placed right behind the launch node command:
+
 ```bash
 java -cp lib/* i5.las2peer.tools.L2pNodeLauncher -s service -p ${LAS2PEER_PORT} <your args>
 ```
