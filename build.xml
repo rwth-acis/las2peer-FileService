@@ -1,10 +1,10 @@
 <project name="las2peer-File-Service" default="jar" basedir="." xmlns:ivy="antlib:org.apache.ivy.ant">
 
-	<property name="core.version" value="0.8.2" />
+	<property name="core.version" value="0.8.3" />
 
 	<property name="service.name" value="i5.las2peer.services.fileService" />
 	<property name="service.class" value="FileService" />
-	<property name="service.version" value="2.2.5" />
+	<property name="service.version" value="2.2.7" />
 
 	<property name="src.main" location="src/main" />
 	<property name="src.junit" location="src/test" />
@@ -36,7 +36,7 @@
 
 
 	<!-- Ivy Installation (Tool to fetch Libraries) -->
-	<property name="ivy.install.version" value="2.4.0" />
+	<property name="ivy.install.version" value="2.5.0" />
 	<property name="ivy.jar.dir" value="${basedir}/etc/ivy" />
 	<property name="ivy.jar.file" value="${ivy.jar.dir}/ivy.jar" />
 	<property name="ivy.settings.file" value="${ivy.jar.dir}/ivysettings.xml" />
@@ -44,7 +44,7 @@
 	<target name="download-ivy">
 		<mkdir dir="${ivy.jar.dir}" />
 		<echo message="installing ivy..." />
-		<get src="http://repo1.maven.org/maven2/org/apache/ivy/ivy/${ivy.install.version}/ivy-${ivy.install.version}.jar" dest="${ivy.jar.file}" usetimestamp="true" skipexisting="true" />
+		<get src="https://repo1.maven.org/maven2/org/apache/ivy/ivy/${ivy.install.version}/ivy-${ivy.install.version}.jar" dest="${ivy.jar.file}" usetimestamp="true" skipexisting="true" />
 	</target>
 
 	<!-- Try to load Ivy here from local Ivy directory -->
@@ -61,7 +61,7 @@
 		<mkdir dir="${lib}" />
 		<mkdir dir="${service}" />
 		<ivy:settings>
-			<credentials host="role.dbis.rwth-aachen.de:9911/archiva" realm="Repository internal" />
+			<credentials host="archiva.dbis.rwth-aachen.de:9911" realm="Repository internal" />
 		</ivy:settings>
 		<ivy:retrieve type="jar, bundle" conf="*" pattern="${lib}/[artifact]-[revision].[ext]" />
 		<ivy:retrieve type="jar, bundle" conf="bundle" pattern="${tmp.bundle}/[artifact]-[revision].[ext]" />
