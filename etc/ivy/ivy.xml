@@ -13,9 +13,8 @@
         <dependency org="i5" name="las2peer-bundle" rev="${core.version}" changing="true" conf="platform->*" />
         <!-- JUnit -->
         <dependency org="junit" name="junit" rev="4.12" conf="platform->*" />
+		<dependency org="org.jacoco" name="org.jacoco.ant" rev="0.8.5" conf="platform->default" />
 
         <!-- service dependencies -->
-        <dependency org="net.minidev" name="json-smart" rev="2.3" />
-        <dependency org="org.apache.commons" name="commons-lang3" rev="3.5" />
     </dependencies>
 </ivy-module>

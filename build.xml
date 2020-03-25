@@ -67,11 +67,17 @@
 		<ivy:retrieve type="jar, bundle" conf="bundle" pattern="${tmp.bundle}/[artifact]-[revision].[ext]" />
 	</target>
 
+	<target name="init_general">
+		<tstamp />
+		<mkdir dir="${tmp}" />
+		<mkdir dir="${export}" />
+	</target>
+
 
 	<!-- Initialization (Folder Creation)-->
-	<target name="init_compile" depends="get_deps">
-		<mkdir dir="${tmp}" />
+	<target name="init_compile" depends="init_general, get_deps">
 		<mkdir dir="${tmp.classes}" />
+		<mkdir dir="${tmp.bundle}" />
 		<mkdir dir="${tmp.junit}" />
 	</target>
 
@@ -86,7 +92,7 @@
 		</copy>
 	</target>
 
-	<target name="compile_junit" depends="compile_main">
+	<target name="compile_junit" depends="init_compile">
 		<javac srcdir="${src.junit}" destdir="${tmp.junit}" classpath="${tmp.classes}:${lib.junit}" classpathref="libraries" debug="on" encoding="UTF-8" includeantruntime="false" />
 		<copy todir="${tmp.junit}">
 			<fileset dir="${src.junit}">
@@ -129,24 +135,51 @@
 
 
 	<!-- JUnit Testing -->
-	<target name="junit" depends="compile_junit" description="--> execute all junit tests">
+	<target name="junit" depends="junit_tests, junit_clean" description="--> execute all junit tests" />
+
+	<target name="init_junit" depends="init_general">
 		<mkdir dir="${export.test_reports}" />
-		<junit fork="yes" haltonerror="yes" haltonfailure="yes" printsummary="yes">
-			<classpath>
-				<pathelement path="${tmp.classes}" />
-				<pathelement path="${tmp.junit}" />
-				<pathelement path="${lib.junit}" />
-				<path refid="libraries" />
-			</classpath>
-			<formatter type="plain" usefile="false" />
-			<formatter type="plain" />
-			<batchtest fork="yes" todir="${export.test_reports}">
-				<fileset dir="${tmp.junit}">
-					<include name="**/*Test.class" />
-				</fileset>
-			</batchtest>
-		</junit>
+	</target>
+
+	<target name="junit_clean">
 		<delete dir="${tmp.junit}" />
+	</target>
+
+	<target name="junit_tests" depends="init_junit, compile_junit">
+		<taskdef uri="antlib:org.jacoco.ant" resource="org/jacoco/ant/antlib.xml" classpathref="libraries" />
+		<jacoco:coverage destfile="${export}/jacoco.exec" xmlns:jacoco="antlib:org.jacoco.ant">
+			<junit fork="yes" haltonerror="yes" haltonfailure="yes" printsummary="yes">
+				<classpath>
+					<pathelement path="${tmp.classes}" />
+					<pathelement path="${tmp.junit}" />
+					<pathelement path="${lib.junit}" />
+					<path refid="libraries" />
+				</classpath>
+				<formatter type="plain" />
+				<batchtest fork="yes" todir="${export.test_reports}">
+					<fileset dir="${tmp.junit}">
+						<include name="**/*Test.class" />
+					</fileset>
+				</batchtest>
+			</junit>
+		</jacoco:coverage>
+		<taskdef uri="antlib:org.jacoco.ant" resource="org/jacoco/ant/antlib.xml" classpathref="libraries" />
+		<jacoco:report xmlns:jacoco="antlib:org.jacoco.ant">
+			<executiondata>
+				<file file="${export}/jacoco.exec" />
+			</executiondata>
+
+			<structure name="jacoco">
+				<classfiles>
+					<fileset dir="${tmp.classes}" />
+				</classfiles>
+				<sourcefiles encoding="UTF-8">
+					<fileset dir="${src.main}" />
+				</sourcefiles>
+			</structure>
+
+			<xml destfile="${export}/coverage.xml" />
+		</jacoco:report>
 	</target>
 
 

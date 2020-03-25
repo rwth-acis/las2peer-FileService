@@ -4,9 +4,6 @@
 	<classpathentry kind="src" output="tmp/test" path="src/test"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.junit.JUNIT_CONTAINER/4"/>
-	<classpathentry kind="lib" path="lib/accessors-smart-1.2.jar"/>
-	<classpathentry kind="lib" path="lib/json-smart-2.3.jar"/>
-	<classpathentry kind="lib" path="lib/commons-lang3-3.5.jar"/>
 	<classpathentry kind="lib" path="lib/las2peer-bundle-0.8.3.jar"/>
 	<classpathentry kind="output" path="output"/>
 </classpath>
