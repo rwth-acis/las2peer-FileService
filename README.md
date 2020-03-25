@@ -1,14 +1,14 @@
 <p align="center">
   <img src="https://raw.githubusercontent.com/rwth-acis/las2peer/master/img/logo/bitmap/las2peer-logo-128x128.png" />
 </p>
-<h1 align="center">las2peer-Contact-Service</h1>
+<h1 align="center">las2peer-FileService</h1>
 <p align="center">
-  <a href="https://travis-ci.org/rwth-acis/las2peer-Contact-Service" alt="Travis Build Status">
-        <img src="https://travis-ci.org/rwth-acis/las2peer-Contact-Service.svg?branch=master" /></a>
-  <a href="https://codecov.io/gh/rwth-acis/las2peer-Contact-Service" alt="Code Coverage">
-        <img src="https://codecov.io/gh/rwth-acis/las2peer-Contact-Service/branch/master/graph/badge.svg" /></a>
-  <a href="https://libraries.io/github/rwth-acis/las2peer-contact-service" alt="Dependencies">
-        <img src="https://img.shields.io/librariesio/github/rwth-acis/las2peer-Contact-Service" /></a>
+  <a href="https://travis-ci.org/rwth-acis/las2peer-FileService" alt="Travis Build Status">
+        <img src="https://travis-ci.org/rwth-acis/las2peer-FileService.svg?branch=master" /></a>
+  <a href="https://codecov.io/gh/rwth-acis/las2peer-FileService" alt="Code Coverage">
+        <img src="https://codecov.io/gh/rwth-acis/las2peer-FileService/branch/master/graph/badge.svg" /></a>
+  <a href="https://libraries.io/github/rwth-acis/las2peer-FileService" alt="Dependencies">
+        <img src="https://img.shields.io/librariesio/github/rwth-acis/las2peer-FileService" /></a>
 </p>
 
 This is a las2peer file service. It provides methods to fetch and store binary data (files) in the las2peer network.
