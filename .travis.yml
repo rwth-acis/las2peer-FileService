@@ -1,6 +1,7 @@
 language: java
-jdk:
-#- openjdk7
-- oraclejdk8
+jdk: openjdk8
+install: "sudo apt-get install ant ant-optional"
 script: "ant all"
 sudo: false
+after_success:
+  - bash <(curl -s https://codecov.io/bash)
