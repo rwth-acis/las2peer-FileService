@@ -109,7 +109,7 @@ If the variables are not sufficient for your setup you can customize how the nod
 In this example we start the node in interactive mode:
 
 ```bash
-docker run -it -e MYSQL_USER=myuser -e MYSQL_PASSWORD=mypasswd activity-tracker startService\(\'i5.las2peer.services.fileService.FileService@2.2.5\', \'Passphrase\'\) startWebConnector interactive
+docker run -it -e MYSQL_USER=myuser -e MYSQL_PASSWORD=mypasswd activity-tracker startService\(\'i5.las2peer.services.fileService.FileService@2.2.6\', \'Passphrase\'\) startWebConnector interactive
 ```
 
 Inside the container arguments are placed right behind the launch node command:
