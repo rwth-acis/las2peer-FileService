@@ -14,3 +14,8 @@ jobs:
         env:
           PORT: ${{ job.services.mysql.ports[3306] }}
         run: ./gradlew clean build --info
+      - uses: codecov/codecov-action@v1
+        with:
+          flags: unittests
+          fail_ci_if_error: true
+          verbose: true
