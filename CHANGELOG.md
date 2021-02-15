@@ -12,8 +12,9 @@ the [GitHub Release Page](https://github.com/rwth-acis/las2peer-FileService/rele
 ### Changed
 
 - Updated las2peer to 1.0.0 [#5](https://github.com/rwth-acis/las2peer-FileService/pull/5)
-- Update las2peer to 1.1.0
-- Changed Java Version tp 14
+- Update las2peer to 1.1.0 [#6](https://github.com/rwth-acis/las2peer-FileService/pull/6)
+- Changed required Java Version to 14 [#6](https://github.com/rwth-acis/las2peer-FileService/pull/6)
+- Build Process is now based on gradle [#6](https://github.com/rwth-acis/las2peer-FileService/pull/6)
 
 ## [2.2.5] - 2018-02-27
 
