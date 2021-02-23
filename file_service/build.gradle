@@ -114,12 +114,32 @@ build.dependsOn copyJar
 build.dependsOn copyToLib
 build.dependsOn startscripts
 
-// Cleanup
+// Build export directory which can be shipped on request
+task export (type: Copy, dependsOn: build) {
+    into "$rootDir/export"
 
+    into("service") {
+        from jar
+    }
+    into("lib") {
+        from configurations.compileOnly
+    }
+    into("bin") {
+        from "../bin"
+    }
+    into("etc") {
+        from "../etc"
+    }
+    into("javadoc") {
+        from "$buildDir/doc/javadoc"
+    }
+}
+
+// Cleanup
 clean.doLast {
     file("$rootDir/lib").deleteDir()
     file("$rootDir/service").deleteDir()
-    file("$projectDir/export").deleteDir()
+    file("$rootDir/export").deleteDir()
 }
 
 task cleanAll {
@@ -127,6 +147,7 @@ task cleanAll {
 
     doLast {
         file("$rootDir/log").deleteDir()
+        file("$projectDir/log").deleteDir()
         file("$rootDir/node-storage").deleteDir()
     }
 }
