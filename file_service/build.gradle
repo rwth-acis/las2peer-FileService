@@ -116,7 +116,7 @@ build.dependsOn startscripts
 
 // Build export directory which can be shipped on request
 task export (type: Copy, dependsOn: build) {
-    into "$rootDir/export"
+    into "$buildDir/export"
 
     into("service") {
         from jar
@@ -131,15 +131,21 @@ task export (type: Copy, dependsOn: build) {
         from "../etc"
     }
     into("javadoc") {
-        from "$buildDir/doc/javadoc"
+        from "$buildDir/docs/javadoc"
     }
+}
+
+task packageDistribution(type: Zip, dependsOn: export) {
+    archiveFileName = "${project.property('service.class')}.zip"
+    destinationDirectory = file("$buildDir/dist")
+
+    from "$buildDir/export"
 }
 
 // Cleanup
 clean.doLast {
     file("$rootDir/lib").deleteDir()
     file("$rootDir/service").deleteDir()
-    file("$rootDir/export").deleteDir()
 }
 
 task cleanAll {

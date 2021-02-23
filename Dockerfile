@@ -18,7 +18,7 @@ RUN addgroup -g 1000 -S las2peer && \
 RUN apk add --update bash xmlstarlet && rm -f /var/cache/apk/*
 
 WORKDIR /src
-COPY --chown=las2peer:las2peer --from=build /home/gradle/src/export/ .
+COPY --chown=las2peer:las2peer --from=build /home/gradle/src/file_service/build/export/ .
 COPY --chown=las2peer:las2peer docker-entrypoint.sh /src/docker-entrypoint.sh
 COPY --chown=las2peer:las2peer gradle.properties /src/gradle.properties
 
