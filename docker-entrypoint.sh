@@ -7,10 +7,18 @@ if [[ ! -z "${DEBUG}" ]]; then
     set -x
 fi
 
+PROPERTY_FILE=gradle.properties
+
+function getProperty {
+   PROP_KEY=$1
+   PROP_VALUE=`cat $PROPERTY_FILE | grep "$PROP_KEY" | cut -d'=' -f2`
+   echo $PROP_VALUE
+}
+
 # set some helpful variables
-export SERVICE_VERSION=$(xmlstarlet sel -t -v "/project/property[@name='service.version']/@value" build.xml)
-export SERVICE_NAME=$(xmlstarlet sel -t -v "/project/property[@name='service.name']/@value" build.xml)
-export SERVICE_CLASS=$(xmlstarlet sel -t -v "/project/property[@name='service.class']/@value" build.xml)
+export SERVICE_VERSION=$( getProperty "service.version")
+export SERVICE_NAME=$( getProperty "service.name")
+export SERVICE_CLASS=$( getProperty "service.class")
 export SERVICE=${SERVICE_NAME}.${SERVICE_CLASS}@${SERVICE_VERSION}
 
 # set defaults for optional service parameters

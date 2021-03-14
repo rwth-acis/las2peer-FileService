@@ -1,19 +1,39 @@
-/output/
-/export/
-/node-storage/
-/.las2peer/
-/tmp/
-/log/
-/lib/
-ivy.jar
-/service/
-/out/
-/.idea/
+*.class
+
+# Package Files #
+*.jar
+*.war
+*.ear
+
+# LAS2peer files
+/export
+/tmp
+/.las2peer
+/node-storage
+/startup
+log
+/lib
+etc/ivy/ivy.jar
+/service
+/etc/startup
 *.iml
-.DS_Store
-/.settings/
-/junitvmwatcher*.properties
-/junit*.properties
-/etc/
-*.secret
-archiva_credentials.xml
+/.idea
+restMapping.xml
+/out
+/output/
+bin/start_network.bat
+bin/start_network.sh
+
+# IntelliJ
+.idea/
+
+# Eclipse
+.metadata
+.idea/workspace.xml
+etc/launcher-configuration.ini
+
+# Ignore Gradle project-specific cache directory
+.gradle
+
+# Ignore Gradle build output directory
+build
