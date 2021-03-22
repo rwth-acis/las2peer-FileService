@@ -24,7 +24,7 @@ COPY --chown=las2peer:las2peer gradle.properties /src/gradle.properties
 
 # run the rest as unprivileged user
 USER las2peer
-RUN ant jar
+
 RUN dos2unix docker-entrypoint.sh
 
 EXPOSE $HTTP_PORT
