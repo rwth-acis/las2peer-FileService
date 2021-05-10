@@ -21,11 +21,14 @@ WORKDIR /src
 COPY --chown=las2peer:las2peer --from=build /home/gradle/src/file_service/build/export/ .
 COPY --chown=las2peer:las2peer docker-entrypoint.sh /src/docker-entrypoint.sh
 COPY --chown=las2peer:las2peer gradle.properties /src/gradle.properties
+RUN chmod +x docker-entrypoint.sh
 
+RUN dos2unix docker-entrypoint.sh
+RUN dos2unix etc/ant_configuration/service.properties
 # run the rest as unprivileged user
 USER las2peer
 
-RUN dos2unix docker-entrypoint.sh
+
 
 EXPOSE $HTTP_PORT
 EXPOSE $HTTPS_PORT
