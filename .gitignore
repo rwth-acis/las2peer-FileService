@@ -37,3 +37,9 @@ etc/launcher-configuration.ini
 
 # Ignore Gradle build output directory
 build
+.settings/org.eclipse.buildship.core.prefs
+file_service/.settings/org.eclipse.buildship.core.prefs
+file_service/.settings/org.eclipse.jdt.core.prefs
+file_service/.project
+bin/start_network.sh
+bin/start_network.bat
