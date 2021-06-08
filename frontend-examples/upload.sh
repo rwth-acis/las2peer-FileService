@@ -5,7 +5,7 @@
 WEBCONNECTOR_URL=http://localhost:14580
 
 function curlcmd {
-  curl --form "filecontent=@$1;filename=$1" --form identifier=fileservice/$1 ${WEBCONNECTOR_URL}/fileservice/files
+  curl --form "filecontent=@$1;filename=$1" --form identifier=files/$1 ${WEBCONNECTOR_URL}/files
   echo "" # just for the newline character
 }
 
