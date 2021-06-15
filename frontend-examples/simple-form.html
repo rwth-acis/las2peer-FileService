@@ -1,25 +1,22 @@
 <!-- This form only uses plain HTML and may be integrated in your website to upload files to a las2peer network using FileService -->
-<form method="post" enctype="multipart/form-data" action="http://localhost:14580/fileservice/files">
-  <div>
-    <p>Select a file from your file system to upload.</p>
-    <label for="id_filecontent">File input</label>
-    <input type="file" id="id_filecontent" name="filecontent">
-  </div>
-  <div>
-    <label for="id_identifier">Identifier (optional)</label>
-    <input type="text" id="id_identifier" name="identifier" placeholder="must be unique">
-  </div>
-  <div>
-    <label for="id_sharewithgroup">Share with group</label>
-    <input type="text" id="id_sharewithgroup" name="sharewithgroup" placeholder="enter group id">
-  </div>
-  <div>
-    <label for="id_excludefromindex">Exclude file from index listing</label>
-    <input type="checkbox" id="id_excludefromindex" name="excludefromindex">
-  </div>
-  <div>
-    <label for="id_description">Description</label>
-    <textarea id="id_description" name="description" rows="3"></textarea>
-  </div>
-  <button type="submit">Press</button> to upload the file!
+<form action="http://localhost:14580/files" enctype="multipart/form-data" method="post">
+    <div>
+        <p>Select a file from your file system to upload.</p>
+        <label for="id_filecontent">File input</label>
+        <input id="id_filecontent" name="filecontent" type="file">
+    </div>
+    <div>
+        <label for="id_sharewithgroup">Share with group</label>
+        <input id="id_sharewithgroup" name="sharewithgroup" placeholder="enter group id" type="text">
+    </div>
+    <div>
+        <label for="id_excludefromindex">Exclude file from index listing</label>
+        <input id="id_excludefromindex" name="excludefromindex" type="checkbox">
+    </div>
+    <div>
+        <label for="id_description">Description</label>
+        <textarea id="id_description" name="description" rows="3"></textarea>
+    </div>
+    <button type="submit">Press</button>
+    to upload the file!
 </form>

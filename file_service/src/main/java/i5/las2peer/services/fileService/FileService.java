@@ -43,10 +43,10 @@ import java.util.logging.Level;
  * This is an example service to store files in the las2peer network. One can upload and download files using the
  * service also via the WebConnector.
  */
-@ServicePath("/fileservice")
+@ServicePath("/files")
 public class FileService extends RESTService {
 
-    public static final String API_VERSION = "1.0";
+    public static final String API_VERSION = "2.0";
 
     // non HTTP standard headers
     public static final String HEADER_OWNERID = "ownerid";
@@ -64,7 +64,7 @@ public class FileService extends RESTService {
     private static final L2pLogger logger = L2pLogger.getInstance(FileService.class.getName());
     private static final String ENVELOPE_BASENAME = "file-";
     private static final SimpleDateFormat RFC2822FMT = new SimpleDateFormat("EEE, dd MMM yyyy HH:mm:ss Z (zzz)");
-    private static final String RESOURCE_FILES_BASENAME = "/files";
+    private static final String RESOURCE_FILES_BASENAME = "/";
     private static final String RESOURCE_DOWNLOAD_BASENAME = "/download";
     private static final String INDEX_IDENTIFIER_PREFIX = "index-";
     private static final String RESOURCE_INDEX_JSON = "/index.json";
@@ -549,9 +549,8 @@ public class FileService extends RESTService {
 
         /**
          * This method uploads a file to the las2peer network.
+         * form/request element.
          *
-         * @param identifier        Value of the {@value i5.las2peer.services.fileService.FileService#UPLOAD_IDENTIFIER}-tagged
-         *                          form/request element.
          * @param fileContentHeader The header of the submitted file used to determine the filename.
          * @param bodyPart          The body part of the submitted file used to determine the mime type.
          * @param fileContent       The actual submitted file content.
@@ -566,27 +565,24 @@ public class FileService extends RESTService {
         @Produces(MediaType.TEXT_PLAIN)
         @ApiResponses(
                 value = {@ApiResponse(
-                        code = HttpURLConnection.HTTP_OK,
-                        message = "File upload successfull"),
-                        @ApiResponse(
-                                code = HttpURLConnection.HTTP_CREATED,
-                                message = "File successfully created"),
+                        code = HttpURLConnection.HTTP_CREATED,
+                        message = "File successfully created. Returns identifier.",
+                        response = String.class),
                         @ApiResponse(
                                 code = HttpURLConnection.HTTP_BAD_REQUEST,
                                 message = "File upload failed!"),
                         @ApiResponse(
                                 code = HttpURLConnection.HTTP_INTERNAL_ERROR,
                                 message = "File upload failed!")})
-        public Response postFile(@FormDataParam(UPLOAD_IDENTIFIER) String identifier,
-                                 @FormDataParam(UPLOAD_FILE) FormDataContentDisposition fileContentHeader,
+        public Response postFile(@FormDataParam(UPLOAD_FILE) FormDataContentDisposition fileContentHeader,
                                  @FormDataParam(UPLOAD_FILE) FormDataBodyPart bodyPart,
                                  @FormDataParam(UPLOAD_FILE) InputStream fileContent,
                                  @FormDataParam(UPLOAD_SHARE_WITH_GROUP) String shareWithGroup,
                                  @FormDataParam(UPLOAD_DESCRIPTION) String description,
                                  @FormDataParam(UPLOAD_EXCLUDE_FROM_INDEX) String excludeFromIndex) {
             FileService service = (FileService) Context.getCurrent().getService();
-            return service.uploadFile(identifier, fileContentHeader, bodyPart, fileContent, shareWithGroup, description,
-                    excludeFromIndex, false);
+            UUID uuid = UUID.randomUUID();
+            return service.uploadFile(uuid.toString(), fileContentHeader, bodyPart, fileContent, shareWithGroup, description, excludeFromIndex, false);
         }
 
         /**
@@ -608,11 +604,8 @@ public class FileService extends RESTService {
         @Produces(MediaType.TEXT_PLAIN)
         @ApiResponses(
                 value = {@ApiResponse(
-                        code = HttpURLConnection.HTTP_OK,
-                        message = "File upload successfull"),
-                        @ApiResponse(
-                                code = HttpURLConnection.HTTP_CREATED,
-                                message = "File successfully created"),
+                        code = HttpURLConnection.HTTP_CREATED,
+                        message = "File successfully created"),
                         @ApiResponse(
                                 code = HttpURLConnection.HTTP_BAD_REQUEST,
                                 message = "File upload failed!"),
