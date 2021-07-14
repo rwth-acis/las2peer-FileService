@@ -15,8 +15,8 @@ ENV LAS2PEER_PORT=9011
 
 RUN apk add --update bash curl tzdata  xmlstarlet && rm -f /var/cache/apk/*
 
-RUN addgroup -g 1000 -S las2peer && \
-    adduser -u 1000 -S las2peer -G las2peer
+RUN addgroup -g 1777 -S las2peer && \
+    adduser -u 1777 -S las2peer -G las2peer
 
 COPY --chown=las2peer:las2peer . /src
 WORKDIR /src
