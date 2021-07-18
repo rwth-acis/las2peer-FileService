@@ -24,6 +24,12 @@ export SERVICE=${SERVICE_NAME}.${SERVICE_CLASS}@${SERVICE_VERSION}
 # set defaults for optional service parameters
 [[ -z "${SERVICE_PASSPHRASE}" ]] && export SERVICE_PASSPHRASE='Passphrase'
 
+# set pod ip in pastry conf
+if [[ ! -z "${BIND_IP}" ]]; then
+  echo external_address = ${BIND_IP}:${LAS2PEER_PORT} > etc/pastry.properties
+  echo socket_bindAddress = ${BIND_IP} >> etc/pastry.properties
+fi
+
 # wait for any bootstrap host to be available
 if [[ ! -z "${BOOTSTRAP}" ]]; then
     echo "Waiting for any bootstrap host to become available..."
