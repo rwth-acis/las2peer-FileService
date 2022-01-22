@@ -15,7 +15,7 @@ plugins {
 
 application {
     // Define the main class for the application.
-    mainClass = "${project.property('service.name')}.${project.property('service.class')}"
+    mainClass.set("${project.property('service.name')}.${project.property('service.class')}")
 
     group = "${project.property('service.name')}"
     archivesBaseName = group
@@ -28,11 +28,14 @@ application {
 
 repositories {
     // Use JCenter for resolving dependencies.
-    jcenter()
+    mavenCentral()
 
     // DBIS Archiva
     maven {
         url "https://archiva.dbis.rwth-aachen.de:9911/repository/internal/"
+    }
+    maven {
+        url "https://archiva.dbis.rwth-aachen.de:9911/repository/snapshots/"
     }
 }
 
@@ -42,14 +45,14 @@ dependencies {
 
     // las2peer bundle which is not necessary in the runtime path
     // compileOnly will be moved into the lib dir afterwards
-    compileOnly "i5:las2peer-bundle:${project.property('core.version')}"
+    implementation "i5:las2peer-bundle:${project.property('core.version')}"
 
     // These dependencies are used by the application.
 }
 
 configurations {
     // This ensures las2peer is available in the tests, but won't be bundled
-    testCompile.extendsFrom compileOnly
+    testImplementation.extendsFrom implementation
 }
 
 test {
@@ -85,7 +88,7 @@ task copyJar(type: Copy) {
 
 // Maybe there is a more idiomatic way to separate out las2peer
 task copyToLib(type: Copy) {
-    from configurations.compileOnly
+    from configurations.compileClasspath
     into "../lib"
 }
 
